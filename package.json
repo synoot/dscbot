@@ -1,0 +1,25 @@
+{
+  "name": "discordbot-ts",
+  "version": "1.0.0",
+  "description": "Discord Bot written with discord.js and TypeScript",
+  "main": "index.js",
+  "scripts": {
+    "prod": "npm run rd && yarn tsc && node ./build/index.js prod",
+    "dev": "npm run rd && yarn tsc && node ./build/index.js dev",
+    "update": "npm run rd && yarn tsc",
+    "rd": "rd /S /Q build && mkdir build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/require-dir": "^1.0.1"
+  },
+  "dependencies": {
+    "discord.js": "^12.5.1",
+    "eslint": "^7.18.0",
+    "owoify-js": "^1.0.7",
+    "require-dir": "^1.2.0",
+    "typescript": "^4.1.3"
+  }
+}
