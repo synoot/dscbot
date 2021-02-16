@@ -36,6 +36,8 @@ Adding commands is quite simple.
 * When making a **new, barebones** command file, make sure your `exports.command` is a new Command class.
 * All codepaths must return either a `CommandResponse` or throw an error/terminate.
 * There is a parameter in `CommandResponse`s named `users` which is an array of UserID's which will be pinged in place of $ signs in the `message` parameter.
+* There is a class named `DataHelper` (there's an exported getter for getting the `DataHelper` used in `index.ts`, so you can save to the main save file) which contains some boilerplate for fetching data.
+* There is a class named `FileHelper` which contains some boilerplate for reading and writing files.
 
 #### Loading your commands during runtime
 
