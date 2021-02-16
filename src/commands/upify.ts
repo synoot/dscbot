@@ -4,6 +4,7 @@ import { Command } from "../commandhandler";
 exports.command = new Command({
     name: "upify",
     description: "My money up... Your money up... the cycle never ends!",
+    category: "Upification",
     callback(msg : Message) {
         const up = Math.floor(Math.random() * 100)
         return {

@@ -109,12 +109,28 @@ function onMessage(msg : Message) {
     if (spl[0] === `${prefix}help`) {
         
         const ind = Math.floor(Math.random() * helpReplyList.length)
+        const categories : TypeObject<TypeObject<Command>> = {};
         let hstring = `**${helpReplyList[ind]}** | Default prefix: \`${prefix}\`\nThe command's prefix is shown next to the command, e.g. \`${prefix}help\`\n`
 
-        for (let c in cmdList) {
+        for (let c in cmdList) { //I want to objectify this SO BADLY.
             const cmd : Command = cmdList[c]
+            let cat = categories[cmd.category]
 
-            hstring = `${hstring}\`${cmd.prefix}${cmd.name}\` - \`${cmd.description}\`\n`
+            if (cat === undefined) { categories[cmd.category] = {}; cat = categories[cmd.category]}
+
+            cat[cmd.name] = cmd
+        }
+
+        for (let cn in categories) {
+            const cat = categories[cn]
+
+            hstring = `${hstring}**${cn}**:\n` // **categoryName**:
+
+            for (let cmd_n in cat) {
+                const cmd = cat[cmd_n]
+
+                hstring = `${hstring}\t**${cmd.prefix}${cmd.name}** - ${cmd.description}\n` //    **(prefix)cmdName** - cmdDescription
+            }
         }
 
         hstring = lvl !== "none" ? hstring = owoify(hstring, lvl) : hstring

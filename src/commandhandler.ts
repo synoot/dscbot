@@ -7,6 +7,10 @@ export class Command implements TypeCommand {
         if (options.prefix !== undefined) {
             this.prefix = options.prefix
         }
+
+        if (options.category !== undefined) {
+            this.category = options.category
+        }
             
         this.name = options.name
         this.description = options.description
@@ -16,5 +20,6 @@ export class Command implements TypeCommand {
     prefix: string = getPrefix();
     name: string;
     description: string;
+    category: string = "Ungrouped";
     callback: (msg: Message) => CommandResponse;
 }

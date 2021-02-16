@@ -23,12 +23,14 @@ export interface CommandOptions {
     description : string
     callback : CommandCallback
     prefix? : string
+    category? : string
 }
 
 export interface TypeCommand {
     prefix : string
     name : string
     description : string
+    category : string
     callback : CommandCallback
 }
 
