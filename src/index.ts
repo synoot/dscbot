@@ -136,7 +136,7 @@ function onMessage(msg : Message) {
                 case "2":
                 case "3":
                     guildcat.addData("owolevel", owolevel[Number(spl[1])].toLowerCase())
-                    msg.channel.send(`Did it work? This is test. I am test ${guildcat.getData("owolevel")}`)
+                    msg.channel.send(`Success! Changed owo level to ${guildcat.getData("owolevel")}`)
                     break
                 default:
                     msg.channel.send(`Invalid owo level (current: ${lvl})`)
