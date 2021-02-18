@@ -1,5 +1,5 @@
 import requireDir from "require-dir";
-import djs, { Message } from "discord.js";
+import djs, { Message, MessageEmbed } from "discord.js";
 import { Base } from "./datahandler";
 import { FileHelper } from "./filehelper";
 import { TypeObject, CommandResponse } from "./types";
@@ -58,6 +58,18 @@ function getCommandList() {
     }
 
     return list
+}
+
+//send da messge
+
+function safeSend(msg : Message, content : any) {
+    console.log(content)
+    msg.channel.send(content).catch((err) => {
+        console.log(`Error:\n${err}\nWill attempt to send.`)
+        msg.channel.send(`Error!\n${err}`).catch((err) => {
+            console.log(`Could not send error for reason:\n${err}`)
+        })
+    })
 }
 
 // some vars
@@ -134,7 +146,7 @@ function onMessage(msg : Message) {
         }
 
         hstring = lvl !== "none" ? hstring = owoify(hstring, lvl) : hstring
-        msg.channel.send(hstring)
+        safeSend(msg, hstring)
 
     } else if (spl[0] === `${prefix}owoify`) {
 
@@ -145,37 +157,41 @@ function onMessage(msg : Message) {
                 case "uwu": 
                 case "uvu":
                     guildcat.addData("owolevel", spl[1])
-                    msg.channel.send(`Success! Changed owo level to ${spl[1]}.`)
+                    safeSend(msg, `Success! Changed owo level to ${spl[1]}.`)
                     break;
                 case "0": 
                 case "1": 
                 case "2":
                 case "3":
                     guildcat.addData("owolevel", owolevel[Number(spl[1])].toLowerCase())
-                    msg.channel.send(`Success! Changed owo level to ${guildcat.getData("owolevel")}`)
+                    safeSend(msg, `Success! Changed owo level to ${guildcat.getData("owolevel")}`)
                     break
                 default:
-                    msg.channel.send(`Invalid owo level (current: ${lvl})`)
+                    safeSend(msg, `Invalid owo level (current: ${lvl})`)
                     break
             }
         } else {
-            msg.channel.send(`You need Manage Messages to change this guild's owo level.`)
+            safeSend(msg, `You need Manage Messages to change this guild's owo level.`)
         }
 
     } else if (spl[0] === `${prefix}reload` && msg.author.id === "152906725350047746") {
 
-        msg.channel.send(":repeat: Reloading Commands (might take a second)")
+        safeSend(msg, ":repeat: Reloading commands, may take a second.")
         cmdList = getCommandList()
-        msg.channel.send(":+1: Reloaded!")
+        safeSend(msg, `:+1: Reloaded! Check ${prefix}help for any updated commands.`)
 
     } else if (typeof cmdList[spl[0]]?.callback === "function") {
 
         const res : CommandResponse = cmdList[spl[0]].callback(msg)
 
-        res.message = lvl !== "none" ? res.message = owoify(res.message, lvl) : res.message
-        res.message = res.isReply ? `<@${msg.author.id}>, ` + res.message : res.message
-
-        msg.channel.send(res.message)
+        if (res.embed !== undefined) {
+            safeSend(msg, {embed: res.embed})
+        } else {
+            res.message = lvl !== "none" ? res.message = owoify(res.message, lvl) : res.message
+            res.message = res.isReply ? `<@${msg.author.id}>, ` + res.message : res.message
+    
+            safeSend(msg, res.message)
+        }
 
     }
 }

@@ -13,6 +13,7 @@ export type OwOLevel = "none" | "owo" | "uwu" | "uvu"
 export interface CommandResponse {
     isReply : boolean
     message : string
+    embed? : TypeObject<any>
     users? : Array<string>
 }
 

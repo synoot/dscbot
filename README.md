@@ -31,7 +31,7 @@ Adding commands is quite simple.
 2. Create a new TypeScript file in `commands`.
 3. Follow the format in the example command.
 
-#### Tips for experienced developers:
+#### Tips for older developers:
 
 * When making a **new, barebones** command file, make sure your `exports.command` is a new Command class.
 * All codepaths must return either a `CommandResponse` or throw an error/terminate.
