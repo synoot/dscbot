@@ -1,10 +1,23 @@
 # Discord Bot
  
-This is my discord bot made using TypeScript. It's designed to be mostly barebones with little hard-coded commands.
-For example, try putting a command into the /commands folder *at runtime*, compile using `yarn update` (or `npm run update`, but it requires yarn either way), and run `-reload`.
-You'll find any changes you've made to all of the commands, existing at runtime or not, will appear! This is done pretty simply, by just using `requireDir()` and flushing the require cache.
+This is a Discord bot made using TypeScript. The goal of this bot was
+1. To learn TypeScript,
+2. To make a bot with modular and programmatically defined commands
 
-The framework is a tad dirty, but it works!
+The second one is a mouthful, I know. It means that, at run time, all of the commands are loaded outside of any source files.
+
+As in, every command in the command directory can be modified or removed, re-built, and then updated without having to restart the bot.
+There are most definitely other bots like this, however, this is a large step up from most of my other bots, so I take pride in this one.
+
+### Features
+
+* Modular commands
+* Speedy, I guess? Someone run benchmarks for me
+* Mostly asynchronous
+* JSON-based data persistence
+* OOP-friendly data & command framework
+* Fully typed and written in TypeScript
+* Supports dev and production environments without installing twice
 
 ### Setting up
 
