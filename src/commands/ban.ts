@@ -5,7 +5,7 @@ exports.command = new Command({
     name: "ban",
     description: "gone",
     category: "moder ation :p",
-    callback(msg : Message) {
+    async callback(msg : Message) {
         const mention = msg.mentions.users.first()
 
         if (mention === undefined) {

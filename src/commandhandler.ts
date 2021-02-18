@@ -21,5 +21,5 @@ export class Command implements TypeCommand {
     name: string;
     description: string;
     category: string = "Ungrouped";
-    callback: (msg: Message) => CommandResponse;
+    callback: (msg: Message) => Promise<CommandResponse>;
 }

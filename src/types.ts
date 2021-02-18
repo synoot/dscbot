@@ -17,7 +17,7 @@ export interface CommandResponse {
     users? : Array<string>
 }
 
-export type CommandCallback = { (msg : Message) : CommandResponse }
+export type CommandCallback = { (msg : Message) : Promise<CommandResponse> }
 
 export interface CommandOptions {
     name : string

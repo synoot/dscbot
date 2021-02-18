@@ -2,9 +2,7 @@ import { Message } from "discord.js";
 import { Command } from "../commandhandler";
 import { FileHelper } from "../filehelper";
 import Twitter from "twitter";
-import { TypeObject } from "../types";
-
-const sleep = require("system-sleep")
+import { CommandResponse, TypeObject } from "../types";
 
 const helper = new FileHelper()
 const config = helper.readFile("./save/amogus-config.json")
@@ -19,20 +17,14 @@ exports.command = new Command({
     name: "amogus",
     description: "Fetches the latest tweet from @sustoss on Twitter",
     category: "Amogus :)",
-    callback(msg : Message) {
+    async callback(msg : Message) {
         let ret : TypeObject<any> = {
             title: "Error?",
             description: "Error!"
         }
 
-        let oldRet = JSON.parse(JSON.stringify(ret))
-
-        twitter.get("statuses/user_timeline", {screen_name: config.userid, count: 10}, (err, tweets, res) => {
-            if (err) { throw err }
-
-            
-            const tweet = tweets[5]
-            let text : string = tweet.text
+        let prom : Promise<CommandResponse> = twitter.get("statuses/user_timeline", {screen_name: config.userid, count: 1}).then((tweets : Twitter.ResponseData) => {
+            const tweet = tweets[0]
             
             let embed : TypeObject<any> = {
                 color: 0x1D9BF0,
@@ -50,22 +42,28 @@ exports.command = new Command({
                 },
                 description: tweet.text
             }
-
+        
             if (tweet.entities.media.length > 0) {
                 embed.thumbnail = {url: tweet.entities.media[0].media_url}
             }
 
-            ret = embed
+            const promise = new Promise(function(resolve, reject) {
+                if (tweets[0] !== undefined) {
+                    resolve({
+                        isReply: false,
+                        message: "",
+                        embed: embed
+                    })
+                } else {
+                    reject("No tweets?")
+                }
+            })
+
+            return promise as Promise<CommandResponse>
+        }).catch((err) => {
+            throw err;
         })
 
-        sleep(500)
-
-        console.log(ret)
-
-        return {
-            isReply: false,
-            message: "",
-            embed: ret
-        }
+        return prom
     }
 })

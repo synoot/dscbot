@@ -182,17 +182,20 @@ function onMessage(msg : Message) {
 
     } else if (typeof cmdList[spl[0]]?.callback === "function") {
 
-        const res : CommandResponse = cmdList[spl[0]].callback(msg)
+        const res = cmdList[spl[0]].callback(msg)
 
-        if (res.embed !== undefined) {
-            safeSend(msg, {embed: res.embed})
-        } else {
-            res.message = lvl !== "none" ? res.message = owoify(res.message, lvl) : res.message
-            res.message = res.isReply ? `<@${msg.author.id}>, ` + res.message : res.message
-    
-            safeSend(msg, res.message)
-        }
-
+        res.then((rsp) => {
+            if (rsp.embed !== undefined) {
+                safeSend(msg, {embed: rsp.embed})
+            } else {
+                rsp.message = lvl !== "none" ? rsp.message = owoify(rsp.message, lvl) : rsp.message
+                rsp.message = rsp.isReply ? `<@${msg.author.id}>, ` + rsp.message : rsp.message
+        
+                safeSend(msg, rsp.message)
+            }
+        }).catch((err) => {
+            throw err
+        })
     }
 }
 

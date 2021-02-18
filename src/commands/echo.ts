@@ -4,7 +4,7 @@ import { Command } from "../commandhandler";
 exports.command = new Command({
     name: "echo",
     description: "Echo.",
-    callback(msg : Message) {
+    async callback(msg : Message) {
         return {
             isReply: false,
             message: msg.content.substr(6)
