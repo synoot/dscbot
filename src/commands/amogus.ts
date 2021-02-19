@@ -16,7 +16,7 @@ const twitter = new Twitter({
 exports.command = new Command({
     name: "amogus",
     description: "Fetches the latest tweet from @sustoss on Twitter",
-    category: "Amogus :)",
+    category: "Amogus",
     async callback(msg : Message) {
         let ret : TypeObject<any> = {
             title: "Error?",
@@ -43,7 +43,7 @@ exports.command = new Command({
                 description: tweet.text
             }
         
-            if (tweet.entities.media.length > 0) {
+            if (tweet.entities.media !== undefined) {
                 embed.thumbnail = {url: tweet.entities.media[0].media_url}
             }
 
