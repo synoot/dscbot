@@ -4,7 +4,6 @@ import { Command } from "../commandhandler";
 exports.command = new Command({
     name: "upify",
     description: "My money up... Your money up... the cycle never ends!",
-    category: "Upification",
     async callback(msg : Message) {
         let up = (Math.floor(Math.random() * 101) - 1)
         up = up < 0 ? 0 : up

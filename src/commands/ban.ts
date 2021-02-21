@@ -4,7 +4,6 @@ import { Command } from "../commandhandler";
 exports.command = new Command({
     name: "ban",
     description: "gone",
-    category: "moder ation :p",
     async callback(msg : Message) {
         const mention = msg.mentions.users.first()
 

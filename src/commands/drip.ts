@@ -4,7 +4,6 @@ import { Command } from "../commandhandler";
 exports.command = new Command({
     name: "drip",
     description: "drip",
-    category: "Amogus",
     async callback(msg : Message) {
         return {
             isReply: false,

@@ -1,9 +1,9 @@
 import { Message } from "discord.js";
-import { Command } from "../commandhandler";
-import { FileHelper } from "../filehelper";
+import { Command } from "../../commandhandler";
+import { FileHelper } from "../../filehelper";
 import Twitter from "twitter";
-import { CommandResponse, TypeObject } from "../types";
-import { getPrefix } from "..";
+import { CommandResponse, TypeObject } from "../../types";
+import { getPrefix } from "../../index";
 
 const helper = new FileHelper()
 const config = helper.readFile("./save/twitter-config.json")
@@ -17,7 +17,6 @@ const twitter = new Twitter({
 exports.command = new Command({
     name: "tweet",
     description: "Fetches the latest tweet from a given Twitter user",
-    category: "Twitter",
     async callback(msg : Message) {
         const username = (msg.content.substr((this.prefix || getPrefix()).length + this.name.length + 1)).toLowerCase()
 

@@ -3,7 +3,7 @@ import djs, { Message, MessageEmbed } from "discord.js";
 import { Base } from "./datahandler";
 import { FileHelper } from "./filehelper";
 import { TypeObject, CommandResponse } from "./types";
-import { Command } from "./commandhandler";
+import { Command, CommandCategory, CommandHandler } from "./commandhandler";
 import { DataHelper } from "./datahelper";
 
 const owoify = require("owoify-js").default //werid champ
@@ -20,8 +20,9 @@ const client = new djs.Client({
 })
 
 const base = new Base()
-const fhelper = new FileHelper();
-const dhelper = new DataHelper(base);
+const cbase = new CommandHandler()
+const fhelper = new FileHelper()
+const dhelper = new DataHelper(base)
 
 // WE DO A BIT OF LOADING
 
@@ -49,12 +50,32 @@ base.loadFromFile("./save/main.json")
 // command list function
 
 function getCommandList() {
-    let commands : { [index : string] : { command : Command } } = requireDir("./commands", { noCache: true })
+    cbase.wipe()
+
+    let commands : TypeObject<any> = requireDir("./commands", { noCache: true , recurse: true }) // returns { "directory" : { "filename" : require("filename") } }
     let list : TypeObject<Command> = {}
 
-    for (let p in commands) {
-        let c : Command = commands[p]?.command
-        list[`${c.prefix}${c.name}`] = c
+    for (const c in commands) {
+        // c being the category
+
+        const l = commands[c]
+
+        if (l.command instanceof Command) { //uncategorized
+            const cm : Command = l.command
+
+            cbase.getCategory("Uncategorized").addCommand(cm)
+            list[`${cm.prefix}${cm.name}`] = cm
+        } else { //category
+            const ct : CommandCategory = new CommandCategory(c)
+            cbase.addCategory(ct)
+
+            for(const cms in commands[c]) { // commands
+                const cm : Command = l[cms].command
+
+                ct.addCommand(cm)
+                list[`${cm.prefix}${cm.name}`] = cm
+            }
+        }
     }
 
     return list
@@ -121,27 +142,16 @@ function onMessage(msg : Message) {
     if (spl[0] === `${prefix}help`) {
         
         const ind = Math.floor(Math.random() * helpReplyList.length)
-        const categories : TypeObject<TypeObject<Command>> = {};
         let hstring = `**${helpReplyList[ind]}** | Default prefix: \`${prefix}\`\nThe command's prefix is shown next to the command, e.g. \`${prefix}help\`\n`
 
-        for (let c in cmdList) { //I want to objectify this SO BADLY.
-            const cmd : Command = cmdList[c]
-            let cat = categories[cmd.category]
+        for (const cn in cbase.categories) { //objectified :]
+            const cat = cbase.categories[cn]
+            hstring = `${hstring}**${cat.name}**:\n` //ex. **Uncategorized** -
 
-            if (cat === undefined) { categories[cmd.category] = {}; cat = categories[cmd.category]}
+            for (const cmn in cat.commands) { // loops over commands in the category
+                const cmd = cat.commands[cmn]
 
-            cat[cmd.name] = cmd
-        }
-
-        for (let cn in categories) {
-            const cat = categories[cn]
-
-            hstring = `${hstring}**${cn}**:\n` // **categoryName**:
-
-            for (let cmd_n in cat) {
-                const cmd = cat[cmd_n]
-
-                hstring = `${hstring}\t**${cmd.prefix}${cmd.name}** - ${cmd.description}\n` //    **(prefix)cmdName** - cmdDescription
+                hstring = `${hstring}\t**${cmd.prefix}${cmd.name}** - ${cmd.description}\n` //ex. **-help** - gives you help
             }
         }
 

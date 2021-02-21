@@ -24,15 +24,30 @@ export interface CommandOptions {
     description : string
     callback : CommandCallback
     prefix? : string
-    category? : string
 }
 
 export interface TypeCommand {
     prefix : string
     name : string
     description : string
-    category : string
     callback : CommandCallback
+}
+
+// CommandCategory types //
+
+export interface TypeCommandCategory {
+    name : string
+    commands : TypeObject<TypeCommand>
+
+    addCommand(command : TypeCommand) : void
+}
+
+export interface TypeCommandHandler {
+    categories : TypeObject<TypeCommandCategory>
+
+    addCategory(category : TypeCommandCategory) : void
+    wipe() : void
+    getCategory(key : string) : TypeCommandCategory
 }
 
 // SaveHandler types //
