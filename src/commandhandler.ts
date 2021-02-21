@@ -36,7 +36,7 @@ export class CommandCategory implements TypeCommandCategory {
 
 export class CommandHandler implements TypeCommandHandler {
     categories : TypeObject<CommandCategory> = {
-        Uncategorized: new CommandCategory("Uncategorized")
+        uncategorized: new CommandCategory("uncategorized")
     };
 
     addCategory(category : CommandCategory) { 
@@ -45,7 +45,7 @@ export class CommandHandler implements TypeCommandHandler {
     }
     getCategory(name : string) { return this.categories[name] }
     wipe() { 
-        this.categories = { Uncategorized: new CommandCategory("Uncategorized") }
+        this.categories = { uncategorized: new CommandCategory("uncategorized") }
         console.log("Wiped.")
     }
 }

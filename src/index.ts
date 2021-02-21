@@ -63,7 +63,7 @@ function getCommandList() {
         if (l.command instanceof Command) { //uncategorized
             const cm : Command = l.command
 
-            cbase.getCategory("Uncategorized").addCommand(cm)
+            cbase.getCategory("uncategorized").addCommand(cm)
             list[`${cm.prefix}${cm.name}`] = cm
         } else { //category
             const ct : CommandCategory = new CommandCategory(c)
@@ -142,20 +142,24 @@ function onMessage(msg : Message) {
     if (spl[0] === `${prefix}help`) {
         
         const ind = Math.floor(Math.random() * helpReplyList.length)
+        const catex = cbase.getCategory(spl[1])
         let hstring = `**${helpReplyList[ind]}** | Default prefix: \`${prefix}\`\nThe command's prefix is shown next to the command, e.g. \`${prefix}help\`\n`
 
-        for (const cn in cbase.categories) { //objectified :]
-            const cat = cbase.categories[cn]
-            hstring = `${hstring}**${cat.name}**:\n` //ex. **Uncategorized** -
+        if (catex === undefined) { //not looking for a specific category
+            hstring = `${hstring}Available Categories:\n`
+            for (const cn in cbase.categories) {
+                hstring = `${hstring}\t**${cn}** - loaded commands: \`${Object.keys(cbase.getCategory(cn).commands).length}\`\n` //bruh
+            }
+        } else { //looking for specific categories
+            hstring = `${hstring}Loaded Commands in **${catex.name}**:\n`
 
-            for (const cmn in cat.commands) { // loops over commands in the category
-                const cmd = cat.commands[cmn]
+            for (const cmn in catex.commands) {
+                const cmd = catex.commands[cmn]
 
-                hstring = `${hstring}\t**${cmd.prefix}${cmd.name}** - ${cmd.description}\n` //ex. **-help** - gives you help
+                hstring = `${hstring}\t**${cmd.prefix}${cmd.name}** - ${cmd.description}\n`
             }
         }
 
-        hstring = lvl !== "none" ? hstring = owoify(hstring, lvl) : hstring
         safeSend(msg, hstring)
 
     } else if (spl[0] === `${prefix}owoify`) {
