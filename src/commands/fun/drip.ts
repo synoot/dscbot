@@ -1,13 +1,13 @@
 import { Message } from "discord.js";
-import { Command } from "../commandhandler";
+import { Command } from "../../commandhandler";
 
 exports.command = new Command({
-    name: "echo",
-    description: "Echo.",
+    name: "drip",
+    description: "drip",
     async callback(msg : Message) {
         return {
             isReply: false,
-            message: msg.content.substr(6)
+            message: `<:drippin:811676921111773214>`
         }
     }
 })

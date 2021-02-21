@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { Command } from "../commandhandler";
+import { Command } from "../../commandhandler";
 
 exports.command = new Command({
     name: "upify",
