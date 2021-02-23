@@ -36,7 +36,7 @@ export class DataHelper {
     }
 
     getDataBool(key : string, fallback : boolean, category : Category) {
-        if (category.getDataBool(key) !== undefined) {
+        if (category.getData(key) !== undefined) {
             return category.getDataBool(key)
         } else {
             category.addData(key, String(fallback))
