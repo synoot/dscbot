@@ -27,7 +27,7 @@ export class DataHelper {
     }
 
     getDataInt(key : string, fallback : number, category : Category) {
-        if (category.getDataInt(key) !== undefined) {
+        if (category.getDataInt(key) !== undefined && !isNaN(category.getDataInt(key))) {
             return category.getDataInt(key)
         } else {
             category.addData(key, fallback.toString())

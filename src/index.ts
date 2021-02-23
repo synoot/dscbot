@@ -1,8 +1,8 @@
 import requireDir from "require-dir";
-import djs, { Message, MessageEmbed } from "discord.js";
+import djs, { DMChannel, Message, NewsChannel, TextChannel } from "discord.js";
 import { Base } from "./datahandler";
 import { FileHelper } from "./filehelper";
-import { TypeObject, CommandResponse } from "./types";
+import { TypeObject } from "./types";
 import { Command, CommandCategory, CommandHandler } from "./commandhandler";
 import { DataHelper } from "./datahelper";
 
@@ -83,11 +83,11 @@ function getCommandList() {
 
 //send da messge
 
-function safeSend(msg : Message, content : any) {
+function safeSend(channel : TextChannel | DMChannel | NewsChannel, content : any) {
     console.log(content)
-    msg.channel.send(content).catch((err) => {
+    channel.send(content).catch((err) => {
         console.log(`Error:\n${err}\nWill attempt to send.`)
-        msg.channel.send(`Error!\n${err}`).catch((err) => {
+        channel.send(`Error!\n${err}`).catch((err) => {
             console.log(`Could not send error for reason:\n${err}`)
         })
     })
@@ -137,7 +137,41 @@ function onMessage(msg : Message) {
     if (guildID === undefined) throw "How."
 
     const guildcat = dhelper.getCategory(guildID)
-    const lvl = dhelper.getData("owolevel", "none", guildcat)
+    const owolvl = dhelper.getData("owolevel", "none", guildcat)
+
+    const levellingEnabled = dhelper.getDataBool("isLevellingEnabled", false, guildcat)
+
+    // XP levelling
+
+    if (levellingEnabled === true) {
+        const XPModifier = dhelper.getDataInt(`${msg.author.id}_modifier`, 1, guildcat)
+        const XPMultiplier = dhelper.getDataInt("xpCharMult", 0.1, guildcat) //Multiplies the characters in the message by this amount to award XP
+        const XPLevelFactor = dhelper.getDataInt("xpFactor", 1.5, guildcat)
+        const msgChars = msg.content.length
+
+        let xpToLevel = dhelper.getDataInt(`${msg.author.id}_xpto`, 200, guildcat)
+        let level = dhelper.getDataInt(`${msg.author.id}_level`, 0, guildcat)
+        let uxp = dhelper.getDataInt(`${msg.author.id}_xp`, 0, guildcat)
+        let add = ((msgChars * XPMultiplier) * XPModifier)
+
+        uxp = uxp + add
+
+        console.log(`${msg.author.id} author\n${XPModifier} daily xp modifier\n${dhelper.getDataInt(`${msg.author.id}_xp`, 0, guildcat)} author's xp\n${XPMultiplier} multiplier per msg chars\n${level} author's level\n${xpToLevel} xp to next level\n${msgChars} msg characters\n${add} gained XP`)
+        
+        if (uxp >= xpToLevel) { // level up
+            level++
+            xpToLevel = xpToLevel * XPLevelFactor
+
+            guildcat.addData(`${msg.author.id}_xpto`, String(xpToLevel))
+            guildcat.addData(`${msg.author.id}_level`, String(level))
+
+            console.log(`${xpToLevel} xp to level after level up\n${level} level\n${XPLevelFactor} level factor`)
+
+            msg.channel.send(`Congratulations, <@${msg.author.id}>! You've leveled up to level **${level}**!`)
+        }
+
+        guildcat.addData(`${msg.author.id}_xp`, String(uxp))
+    }
 
     if (spl[0] === `${prefix}help`) {
         
@@ -160,7 +194,7 @@ function onMessage(msg : Message) {
             }
         }
 
-        safeSend(msg, hstring)
+        safeSend(msg.channel, hstring)
 
     } else if (spl[0] === `${prefix}owoify`) {
 
@@ -171,28 +205,28 @@ function onMessage(msg : Message) {
                 case "uwu": 
                 case "uvu":
                     guildcat.addData("owolevel", spl[1])
-                    safeSend(msg, `Success! Changed owo level to ${spl[1]}.`)
+                    safeSend(msg.channel, `Success! Changed owo level to ${spl[1]}.`)
                     break;
                 case "0": 
                 case "1": 
                 case "2":
                 case "3":
                     guildcat.addData("owolevel", owolevel[Number(spl[1])].toLowerCase())
-                    safeSend(msg, `Success! Changed owo level to ${guildcat.getData("owolevel")}`)
+                    safeSend(msg.channel, `Success! Changed owo level to ${guildcat.getData("owolevel")}`)
                     break
                 default:
-                    safeSend(msg, `Invalid owo level (current: ${lvl})`)
+                    safeSend(msg.channel, `Invalid owo level (current: ${owolvl})`)
                     break
             }
         } else {
-            safeSend(msg, `You need Manage Messages to change this guild's owo level.`)
+            safeSend(msg.channel, `You need Manage Messages to change this guild's owo level.`)
         }
 
     } else if (spl[0] === `${prefix}reload` && msg.author.id === "152906725350047746") {
 
-        safeSend(msg, ":repeat: Reloading commands, may take a second.")
+        safeSend(msg.channel, ":repeat: Reloading commands, may take a second.")
         cmdList = getCommandList()
-        safeSend(msg, `:+1: Reloaded! Check ${prefix}help for any updated commands.`)
+        safeSend(msg.channel, `:+1: Reloaded! Check ${prefix}help for any updated commands.`)
 
     } else if (typeof cmdList[spl[0]]?.callback === "function") {
 
@@ -200,12 +234,12 @@ function onMessage(msg : Message) {
 
         res.then((rsp) => {
             if (rsp.embed !== undefined) {
-                safeSend(msg, {embed: rsp.embed})
+                safeSend(msg.channel, {embed: rsp.embed})
             } else {
-                rsp.message = lvl !== "none" ? rsp.message = owoify(rsp.message, lvl) : rsp.message
+                rsp.message = owolvl !== "none" ? rsp.message = owoify(rsp.message, owolvl) : rsp.message
                 rsp.message = rsp.isReply ? `<@${msg.author.id}>, ` + rsp.message : rsp.message
         
-                safeSend(msg, rsp.message)
+                safeSend(msg.channel, rsp.message)
             }
         }).catch((err) => {
             throw err

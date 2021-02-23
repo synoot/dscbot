@@ -53,7 +53,12 @@ export class Base implements DataBase {
 
             for (let d in cat.data) {
                 let dat = cat.data[d]
-                s[cat.name][d] = dat
+
+                if (!isNaN(Number(dat))) { //hacky float fix :]
+                    s[cat.name][d] = +(Number(dat).toFixed(2)) 
+                } else {
+                    s[cat.name][d] = dat
+                }
             }
         }
 
@@ -64,8 +69,8 @@ export class Base implements DataBase {
         fs.access(path, (err) => { if (err) throw err; })
 
         let b : string = fs.readFileSync(path, 'utf-8')
-        console.log(`Loaded ${b} from path ${path}`)
         let d : TypeObject<any> = JSON.parse(b)
+        console.log(`Loaded ${b} from path ${path}`)
 
         for (let c in d) {
             console.log(`Found category ${c}`)
