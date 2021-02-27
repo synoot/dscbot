@@ -26,16 +26,14 @@ exports.command = new Command({
             throw "What."
         }
 
-        let xpInfo = < TypeObject<any> > dhelper.getDataObject(`${us.id}_xpinfo`, {
-            xp: 0,
-            xpTo: 200,
-            level: 0,
-            lastMsg: new Date().getTime(),
-            msgs: 0,
-            maxMsgs: 50,
-            streak: 0,
-            modifier: 1
-        }, guildcat)
+        let xpInfo = < TypeObject<any> > guildcat.getData(`${us.id}_xpinfo`)
+
+        if (!xpInfo) {
+            return {
+                isReply: true,
+                message: "it appears you do not have a profile?"
+            }
+        }
 
         const xpenabled = dhelper.getDataBool(`isLevellingEnabled`, false, guildcat)
         const xpfactor = dhelper.getDataInt(`xpFactor`, 1.5, guildcat)
