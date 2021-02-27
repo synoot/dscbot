@@ -1,6 +1,7 @@
 // boilerplate for getting data using datahandler.ts
 
 import { Base, Category } from "./datahandler";
+import { TypeObject } from "./types";
 
 export class DataHelper {
     base : Base;
@@ -17,7 +18,16 @@ export class DataHelper {
         }
     }
 
-    getData(key : string, fallback : string, category : Category) {
+    getDataObject(key : string, fallback : TypeObject<any> | any[], category : Category) { //bruh. [] and {} are valid JSON
+        if (category.getData(key) !== undefined && typeof category.getData(key) === "object") {
+            return <TypeObject<any> | any[]>category.getData(key)
+        } else {
+            category.addData(key, fallback)
+            return fallback
+        }
+    }
+
+    getDataString(key : string, fallback : string, category : Category) {
         if (category.getData(key) !== undefined) {
             return category.getData(key)
         } else {

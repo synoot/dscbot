@@ -3,13 +3,12 @@ import { DataBase, DataCategory, TypeObject } from "./types"
 
 export class Category implements DataCategory {
     name : string = ""
-    data : TypeObject<string> = {}  //Everything is stored as a string now, and is cast when
-                                    //getData<T> is called
+    data : TypeObject<string | Array<any> | TypeObject<any>> = {}
     constructor(name : string) {
         this.name = name
     }
 
-    addData(key : string, value : string) {
+    addData(key : string, value : string | Array<any> | TypeObject<any>) {
         this.data[key] = value
     }
 

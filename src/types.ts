@@ -54,12 +54,12 @@ export interface TypeCommandHandler {
 
 export interface DataCategory {
     name : string
-    data : TypeObject<string | boolean | number>
+    data : TypeObject<string | Array<any> | TypeObject<any>>
 
-    addData(key : string, value : string | boolean | number) : void
-    getData(key : string) : string | boolean | number
+    addData(key : string, value : string | Array<any> | TypeObject<any>) : void
+    getData(key : string) : string | Array<any> | TypeObject<any>
 
-    // These three do type casting (yuck) //
+    // These two do type casting (yuck) //
 
     getDataInt(key : string) : number
     getDataBool(key : string) : boolean

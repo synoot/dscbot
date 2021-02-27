@@ -24,6 +24,8 @@ const cbase = new CommandHandler()
 const fhelper = new FileHelper()
 const dhelper = new DataHelper(base)
 
+const clamp = (num : number, min : number, max : number) => Math.min(Math.max(num, min), max)
+
 // WE DO A BIT OF LOADING
 
 const config : TypeObject<any> = fhelper.readFile("./save/config.json")
@@ -32,7 +34,7 @@ const prefix = <string>config.prefix
 let mode = process.argv[2]
 
 if (mode === undefined) { mode = "prod" }
-if (mode !== "dev" && mode !== "prod") { mode = "prod"; console.log("Warning: The only avaliable modes are 'prod' and 'dev', assuming production.") }
+if (mode !== "dev" && mode !== "prod") { mode = "prod"; console.warn("Warning: The only avaliable modes are 'prod' and 'dev', assuming production.") }
 
 const token = <string>config[`token_${mode}`]
 
@@ -43,7 +45,7 @@ export function getHelper() { return dhelper }
 
 // config idk
 
-if (prefix === undefined || token === undefined) { throw "Config is incorrect!" }
+if (prefix === undefined || token === undefined) { throw `Config is incorrect!\nEither prefix or token_${mode} are undefined, perhaps both! Please fix!` }
 
 base.loadFromFile("./save/main.json")
 
@@ -133,44 +135,77 @@ function onMessage(msg : Message) {
     const spl = msg.content.split(" ")
     const guildID = msg.guild?.id
 
-    if (msg.author === client.user) return
-    if (guildID === undefined) throw "How."
+    if (msg.author.bot === true) return
+    if (guildID === undefined) return
 
     const guildcat = dhelper.getCategory(guildID)
-    const owolvl = dhelper.getData("owolevel", "none", guildcat)
+    const owolvl = dhelper.getDataString("owolevel", "none", guildcat)
 
-    const levellingEnabled = dhelper.getDataBool("isLevellingEnabled", false, guildcat)
+    const levellingEnabled = dhelper.getDataBool("isLevelling", true, guildcat)
 
     // XP levelling
 
     if (levellingEnabled === true) {
-        const XPModifier = dhelper.getDataInt(`${msg.author.id}_modifier`, 1, guildcat)
-        const XPMultiplier = dhelper.getDataInt("xpCharMult", 0.1, guildcat) //Multiplies the characters in the message by this amount to award XP
-        const XPLevelFactor = dhelper.getDataInt("xpFactor", 1.5, guildcat)
-        const msgChars = msg.content.length
-
-        let xpToLevel = dhelper.getDataInt(`${msg.author.id}_xpto`, 200, guildcat)
-        let level = dhelper.getDataInt(`${msg.author.id}_level`, 0, guildcat)
-        let uxp = dhelper.getDataInt(`${msg.author.id}_xp`, 0, guildcat)
-        let add = ((msgChars * XPMultiplier) * XPModifier)
-
-        uxp = uxp + add
-
-        console.log(`${msg.author.id} author\n${XPModifier} daily xp modifier\n${dhelper.getDataInt(`${msg.author.id}_xp`, 0, guildcat)} author's xp\n${XPMultiplier} multiplier per msg chars\n${level} author's level\n${xpToLevel} xp to next level\n${msgChars} msg characters\n${add} gained XP`)
+        const XPMultiplier = dhelper.getDataInt("xpCharMult", 0.1, guildcat) //multiplies characters in the message
+        const XPLevelFactor = dhelper.getDataInt("xpMult", 1.15, guildcat) //multiplies xp to next level
+        const DailyMultiplierFactor = dhelper.getDataInt("msgMult", 2, guildcat) //multiplies daily messages
+        const BaseMaxMessages = dhelper.getDataInt("msgBase", 50, guildcat) //base amount of daily messages
+        const msgChars = clamp(msg.content.length, 1, 500) //msg characters, maxxed at 500
         
-        if (uxp >= xpToLevel) { // level up
-            level++
-            xpToLevel = xpToLevel * XPLevelFactor
+        let xpInfo = < TypeObject<any> > dhelper.getDataObject(`${msg.author.id}_xpinfo`, {
+            xp: 0,
+            xpTo: 200,
+            level: 0,
+            lastMsg: new Date().getTime(),
+            msgs: 0,
+            maxMsgs: BaseMaxMessages,
+            streak: 0,
+            modifier: 1
+        }, guildcat)
+        
+        const since = (new Date().getTime() / 1000) - (xpInfo.lastMsg / 1000)
+        
+        let add = (msgChars * XPMultiplier) * xpInfo.modifier
+        
+        xpInfo.xp = xpInfo.xp + add
+        xpInfo.msgs++
 
-            guildcat.addData(`${msg.author.id}_xpto`, String(xpToLevel))
-            guildcat.addData(`${msg.author.id}_level`, String(level))
+        console.log(since)
 
-            console.log(`${xpToLevel} xp to level after level up\n${level} level\n${XPLevelFactor} level factor`)
-
-            msg.channel.send(`Congratulations, <@${msg.author.id}>! You've leveled up to level **${level}**!`)
+        if (xpInfo.msgs <= xpInfo.maxMsgs) {
+            xpInfo.modifier += msgChars * 0.0025
         }
 
-        guildcat.addData(`${msg.author.id}_xp`, String(uxp))
+        if (since >= 86400 && since < 127800) { // 24 hours to 48 hours
+            xpInfo.streak = clamp(xpInfo.streak + 1, 0, 31)
+            xpInfo.msgs = 0
+            xpInfo.lastMsg = new Date().getTime()
+
+            xpInfo.maxMsgs = clamp((xpInfo.streak * DailyMultiplierFactor) * BaseMaxMessages, BaseMaxMessages, Infinity)
+
+            msg.channel.send(`Hello, <@${msg.author.id}>! Your streak has increased to ${xpInfo.streak} days!\n**Messages Today**: ${xpInfo.maxMsgs}`)
+        } else if (since > 127800) { // missed a day (or multiple, but im lazy)
+            xpInfo.streak = clamp(xpInfo.streak - 1, 0, 31)
+            xpInfo.msgs = 0
+            xpInfo.lastMsg = new Date().getTime()
+
+            xpInfo.maxMsgs = clamp((xpInfo.streak * DailyMultiplierFactor) * BaseMaxMessages, BaseMaxMessages, Infinity) //linear messages increase :[
+
+            msg.channel.send(`Oops, <@${msg.author.id}>... you seem to have missed a day.\n**Streak**: ${xpInfo.streak}\n**Messages Today**: ${xpInfo.maxMsgs}`)
+        }
+
+        if (xpInfo.xp >= xpInfo.xpTo) { // level up
+            while (true) { //do a loop to level up. im sure there's a better way, but i'm not a mathematician
+                xpInfo.level++
+                xpInfo.xpTo *= XPLevelFactor
+
+                if (xpInfo.xp < xpInfo.xpTo) { break }
+            }
+
+            msg.channel.send(`Congratulations, <@${msg.author.id}>! You've leveled up to level **${xpInfo.level}**!`)
+        }
+
+        guildcat.addData(`${msg.author.id}_xpinfo`, xpInfo)
     }
 
     if (spl[0] === `${prefix}help`) {

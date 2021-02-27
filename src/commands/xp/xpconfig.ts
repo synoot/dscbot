@@ -1,8 +1,17 @@
 import { Message } from "discord.js";
 import { getHelper } from "../..";
 import { Command } from "../../commandhandler";
+import { TypeObject } from "../../types";
 
 const dhelper = getHelper()
+
+const configs : TypeObject<Array<string>> = { // [type , variable]
+    "multiplier_character": ["number", "xpCharMult"],
+    "multiplier_daily": ["number", "msgMult"],
+    "multiplier_level": ["number", "levelMult"],
+    "daily_base": ["number", "msgBase"],
+    "levelling_enabled": ["boolean", "isLevelling"],
+}
 
 exports.command = new Command({
     name: "xpconfig",
@@ -10,7 +19,11 @@ exports.command = new Command({
     async callback(msg : Message) {
         const spl = msg.content.split(" ")
         const vr = spl[1] // should either be XPEnabled, XPMultiplier
-        const vl = spl[2]
+        let vl : any = spl[2]
+        let vl_old = vl
+        const cf = configs[vr]
+
+        console.log(vr, configs[vr])
         
         let guildcat;
 
@@ -27,56 +40,42 @@ exports.command = new Command({
             }
         }
 
-        switch(vr) {
-            case "xpenabled":
-                let v1 = vl.toLowerCase() === "true" //ye
+        if (cf !== undefined) {
+            if (cf[0] === "number") {
+                vl = Number(vl)
+            } else if (cf[0] === "boolean") {
+                vl = (vl === 'true') //vl = true == true, vl = false == false :)
+            }
 
-                const old = dhelper.getDataBool("isLevellingEnabled", false, guildcat)
-                guildcat.addData("isLevellingEnabled", String(v1))
+            //do some checking or something
 
+            if ((isNaN(vl) && cf[0] === "number") || (vl !== "false" && vl !== "true" && cf[0] === "boolean")) {
                 return {
                     isReply: true,
-                    message: `successfully changed XPEnabled from ${old} to ${v1}`
+                    message: `the value for **${vr}** has to be a(n) ${cf[0]}, you gave **${vl_old}**`
                 }
-            case "xpmultiplier":
-                let v2 = Number(vl.toLowerCase())
+            }
 
-                if (isNaN(v2)) { 
-                    return {
-                        isReply: true,
-                        message: "XPMultiplier must be a number"
-                    }
-                } else {
-                    const old = dhelper.getDataInt("xpCharMult", 0.05, guildcat)
-                    guildcat.addData("xpCharMult", String(v2))
+            const old = guildcat.getData(cf[1])
+            guildcat.addData(cf[1], String(vl))
 
-                    return {
-                        isReply: true,
-                        message: `successfully changed XPMultiplier from **${old}** to **${String(v2)}**`
-                    }
-                }
-            case "xpfactor":
-                let v3 = Number(vl.toLowerCase())
+            return {
+                isReply: true,
+                message: `successfully changed **${vr}** (from ${old} to ${String(vl)})`
+            }
+        } else {
+            let hstring = "Available Config Options:\n"
 
-                if (isNaN(v3)) {
-                    return {
-                        isReply: false,
-                        message: "XPFactor must be a number"
-                    }
-                } else {
-                    const old = dhelper.getDataInt("xpFactor", 1.5, guildcat)
-                    guildcat.addData("xpFactor", String(v3))
+            for (const cn in configs) {
+                const cfa = configs[cn]
 
-                    return {
-                        isReply: true,
-                        message: `successfully changed XPFactor from **${old}** to **${String(v3)}**`
-                    }
-                }
-            default:
-                return {
-                    isReply: true,
-                    message: "valid options are XPEnabled and XPMultiplier (case insensitive)"
-                }
+                hstring = `${hstring}\t**${cn}** - type: **${cfa[0]}**\n`
+            }
+
+            return {
+                isReply: false,
+                message: hstring
+            }
         }
     }
 })
