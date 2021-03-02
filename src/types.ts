@@ -7,6 +7,7 @@ export interface TypeObject<T> {
 }
 
 export type OwOLevel = "none" | "owo" | "uwu" | "uvu"
+export type StorageType = string | number | boolean | any[] | TypeObject<any>
 
 // Command types //
 
@@ -52,27 +53,32 @@ export interface TypeCommandHandler {
 
 // SaveHandler types //
 
-export interface DataCategory {
+export interface TypeDataCategory {
     name : string
-    data : TypeObject<string | Array<any> | TypeObject<any>>
+    data : Map<string, StorageType>
 
-    addData(key : string, value : string | Array<any> | TypeObject<any>) : void
-    getData(key : string) : string | Array<any> | TypeObject<any>
+    addData(key : string, value : StorageType) : StorageType
+    getData(key : string) : StorageType | undefined
 
-    // These two do type casting (yuck) //
-
-    getDataInt(key : string) : number
-    getDataBool(key : string) : boolean
+    getDataInt(key : string) : number | undefined
+    getDataBool(key : string) : boolean | undefined
 }
 
-export interface DataBase {
-    categories : TypeObject<DataCategory>
+export interface TypeDataBase {
+    categories : Map<string, TypeDataCategory>
 
-    addCategory(category : DataCategory) : void
-    getCategory(categoryName : string) : DataCategory
-    getCategoryExists(categoryName : string) : boolean
+    addCategory(category : TypeDataCategory) : TypeDataCategory
+    getCategory(key : string) : TypeDataCategory | undefined
+    getCategoryExists(key : string) : boolean
     writeToFile(path : string) : void
     loadFromFile(path : string) : void
+}
+
+export interface TypeDataHelper {
+    base : TypeDataBase
+    
+    getCategory(key : string) : TypeDataCategory
+    getData(key : string, fallback : StorageType, category : TypeDataCategory) : StorageType
 }
 
 // FileHelper types //
