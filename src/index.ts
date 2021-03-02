@@ -29,7 +29,6 @@ const clamp = (num : number, min : number, max : number) => Math.min(Math.max(nu
 // WE DO A BIT OF LOADING
 
 const config : TypeObject<any> = fhelper.readFile("./save/config.json")
-const prefix = <string>config.prefix
 
 let mode = process.argv[2]
 
@@ -37,6 +36,9 @@ if (mode === undefined) { mode = "prod" }
 if (mode !== "dev" && mode !== "prod") { mode = "prod"; console.warn("Warning: The only avaliable modes are 'prod' and 'dev', assuming production.") }
 
 const token = <string>config[`token_${mode}`]
+const prefix = <string>config[`prefix_${mode}`]
+
+const fileName = `./save/main${mode === "dev" ? "-dev.json" : ".json"}`
 
 // couple of getters
 
@@ -47,7 +49,7 @@ export function getHelper() { return dhelper }
 
 if (prefix === undefined || token === undefined) { throw `Config is incorrect!\nEither prefix or token_${mode} are undefined, perhaps both! Please fix!` }
 
-base.loadFromFile("./save/main.json")
+base.loadFromFile(fileName)
 
 // command list function
 
@@ -125,7 +127,7 @@ function ready() {
     client.user?.setPresence( {
         activity: {
             type: "WATCHING",
-            name: "you (default prefix is -)"
+            name: `people who use ${prefix}help`
         },
         status: "online"
     } )
@@ -142,12 +144,13 @@ function onMessage(msg : Message) {
     const owolvl = dhelper.getDataString("owolevel", "none", guildcat)
 
     const levellingEnabled = dhelper.getDataBool("isLevelling", true, guildcat)
-
+    
     // XP levelling
-
+    
     if (levellingEnabled === true) {
+        const xpRewards = < TypeObject<any> > dhelper.getDataObject("xp_rewards", {}, guildcat)
         const XPMultiplier = dhelper.getDataInt("xpCharMult", 0.1, guildcat) //multiplies characters in the message
-        const XPLevelFactor = dhelper.getDataInt("xpMult", 1.15, guildcat) //multiplies xp to next level
+        const XPLevelFactor = dhelper.getDataInt("levelMult", 1.15, guildcat) //multiplies xp to next level
         const DailyMultiplierFactor = dhelper.getDataInt("msgMult", 2, guildcat) //multiplies daily messages
         const BaseMaxMessages = dhelper.getDataInt("msgBase", 50, guildcat) //base amount of daily messages
         const msgChars = clamp(msg.content.length, 1, 500) //msg characters, maxxed at 500
@@ -198,6 +201,17 @@ function onMessage(msg : Message) {
             while (true) { //do a loop to level up. im sure there's a better way, but i'm not a mathematician
                 xpInfo.level++
                 xpInfo.xpTo *= XPLevelFactor
+
+                if (xpRewards[String(xpInfo.level)] !== undefined) {
+                    msg.guild?.roles.fetch(xpRewards[String(xpInfo.level)]).then(role => {
+                        if (role) {
+                            msg.member?.roles.add(role) 
+                            msg.channel.send(`Congratulations on reaching level **${xpInfo.level}**! You have received the role **${role.name}**!`)  
+                        }
+                    }).catch(err => {
+                        msg.channel.send("Unable to give you a level up role. Error:\n```" + err + "```")
+                    })
+                }
 
                 if (xpInfo.xp < xpInfo.xpTo) { break }
             }
@@ -292,5 +306,5 @@ client.on("message", (msg) => onMessage(msg))
 client.login(token)
 
 setInterval(() => {
-    base.writeToFile("./save/main.json")
+    base.writeToFile(fileName)
 }, 10 * 1000)

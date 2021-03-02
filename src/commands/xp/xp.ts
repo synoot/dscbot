@@ -35,8 +35,8 @@ exports.command = new Command({
             }
         }
 
-        const xpenabled = dhelper.getDataBool(`isLevellingEnabled`, false, guildcat)
-        const xpfactor = dhelper.getDataInt(`xpFactor`, 1.5, guildcat)
+        const xpenabled = dhelper.getDataBool(`isLevelling`, true, guildcat)
+        const xpfactor = dhelper.getDataInt(`levelMult`, 1.15, guildcat)
 
         const XPOffset = xpInfo.xpTo / xpfactor
         const remaining = xpInfo.maxMsgs - xpInfo.msgs
