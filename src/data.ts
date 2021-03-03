@@ -2,7 +2,9 @@
 // Contains DataBase, DataCategory, DataHelper classes
 //
 
-import { StorageType, TypeDataBase, TypeDataCategory, TypeDataHelper, TypeObject } from "./types";
+import { StorageType, TypeDataBase, TypeDataCategory, TypeDataHelper, TypeFileHelper, TypeObject } from "./types";
+import fs from "fs/promises";
+import path from "path";
 
 //
 // DataCategory holds all of the data, stored under a category for organization and to save space when naming keys.
@@ -78,5 +80,75 @@ class DataHelper implements TypeDataHelper {
     }
 }
 
+class FileHelper implements TypeFileHelper {
+    async readFileJSON(path : string) {
+        return fs.access(path).then(async () => { //if the path exists
+
+            try {
+                const buff = await fs.readFile(path);
+                const j = JSON.parse(buff.toString());
+                return await (new Promise((res, rej) => {
+                    if (Object.keys(j).length >= 1) {
+                        res(j);
+                    } else {
+                        rej("Invalid JSON object.");
+                    }
+                }) as Promise<TypeObject<any>>);
+            } catch (err) {
+                throw err;
+            }
+
+        }).catch((err) => { throw err })
+    }
+
+    async saveFileJSON(path : string, data : TypeObject<any>) {
+        return fs.access(path).then(async () => { //if the path exists
+
+            try {
+                await fs.writeFile(path, JSON.stringify(data));
+                return await (new Promise((res) => {
+                    res(true);
+                }) as Promise<boolean>);
+            } catch (err) {
+                throw err;
+            }
+
+        }).catch((err) => { throw err })
+    }
+}
+
+class DirectoryReader {
+    async requireDirectory(folder : string, depth : number, current : number = 0) {
+        try {
+            await fs.access(folder);
+            const arr = await fs.readdir(folder, { withFileTypes: true });
+            let entries: TypeObject<any> = {};
+            for (let x = 0; x < arr.length; x++) {
+                const dt = arr[x];
+                const absPath = path.resolve(folder, dt.name);
+
+                console.log(folder, absPath)
+
+                if (dt.isFile() && path.extname(dt.name) === ".js") {
+                    const cmd = require(absPath);
+
+                    delete require.cache[absPath]; //clears cache to allow re-requiring
+
+                    entries[dt.name.split(".")[0]] = cmd; //ex ./commands/file.ts
+                } else if (dt.isDirectory() && current + 1 <= depth) {
+                    await this.requireDirectory(absPath, depth, current + 1).then((val) => { //"recursively" scans directories
+                        entries[dt.name] = val
+                    })
+                }
+            }
+            return await (new Promise((res, rej) => {
+                res(entries);
+            }) as Promise<TypeObject<any>>);
+        } catch (err) {
+            throw err;
+        }
+    }
+}
+
 // expose both classes
-export default { DataBase, DataCategory, DataHelper }
+export default { DataBase, DataCategory, DataHelper, FileHelper, DirectoryReader }

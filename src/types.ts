@@ -34,22 +34,31 @@ export interface TypeCommand {
     callback : CommandCallback
 }
 
+export interface TypeCommandHandler {
+    commands : Map<string, TypeCommand>
+    commandBase : TypeCommandBase
+
+    loadFromDirectory(path : string) : Promise<void>
+    getCommand(key : string) : TypeCommand | undefined
+}
+
 // CommandCategory types //
 
 export interface TypeCommandCategory {
     name : string
-    commands : TypeObject<TypeCommand>
+    commands : Map<string, TypeCommand>
 
     addCommand(command : TypeCommand) : void
 }
 
-export interface TypeCommandHandler {
-    categories : TypeObject<TypeCommandCategory>
+export interface TypeCommandBase {
+    categories : Map<string, TypeCommandCategory>
 
     addCategory(category : TypeCommandCategory) : void
+    getCategory(key : string) : TypeCommandCategory | undefined
     wipe() : void
-    getCategory(key : string) : TypeCommandCategory
 }
+
 
 // SaveHandler types //
 
@@ -84,6 +93,6 @@ export interface TypeDataHelper {
 // FileHelper types //
 
 export interface TypeFileHelper {
-    readFile(path : string) : TypeObject<any>
-    saveFile(path : string, data : TypeObject<any>) : void
+    readFileJSON(path : string) : Promise<TypeObject<any>>
+    saveFileJSON(path : string, data : TypeObject<any>) : Promise<boolean> // For running code after it has saved
 }
