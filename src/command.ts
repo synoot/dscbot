@@ -1,5 +1,14 @@
+//
+// Contains command-related classes.
+//
+
 import { CommandCallback, CommandOptions, TypeCommand, TypeCommandBase, TypeCommandCategory, TypeCommandHandler } from "./types";
 import index from "./index"
+
+//
+// Command has it's own prefix, name, description, and callback.
+// Stored in CommandHandlers and CommandCategories.
+//
 
 class Command implements TypeCommand {
     prefix = index.getPrefix()
@@ -15,6 +24,11 @@ class Command implements TypeCommand {
     }
 }
 
+//
+// Stores Commands in a Map, for organization purposes.
+// Stored in CommandBases, and resembles the data storage classes.
+//
+
 class CommandCategory implements TypeCommandCategory {
     name : string
     commands : Map<string, Command> = new Map()
@@ -24,6 +38,11 @@ class CommandCategory implements TypeCommandCategory {
     addCommand(command : Command) { this.commands.set(command.name, command) }
     getCommand(command : string) { return this.commands.get(command) }
 }
+
+//
+// Stores CommandCategories in a Map for organization.
+// Resembles the data storage classes (Base -> Categories -> Data)
+//
 
 class CommandBase implements TypeCommandBase {
     categories : Map<string, CommandCategory> = new Map()
@@ -41,6 +60,11 @@ class CommandBase implements TypeCommandBase {
         this.addCategory(uncat)
     }
 }
+
+//
+// Holds all commands, handles loading and requiring them, etc.
+// Also holds the main CommandBase, and sorts Commands into categories when loading.
+//
 
 class CommandHandler implements TypeCommandHandler {
     commands : Map<string, Command> = new Map()

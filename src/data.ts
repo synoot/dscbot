@@ -1,5 +1,5 @@
 //
-// Contains DataBase, DataCategory, DataHelper classes
+// Contains data management classes.
 //
 
 import { StorageType, TypeDataBase, TypeDataCategory, TypeDataHelper, TypeFileHelper, TypeObject } from "./types";
