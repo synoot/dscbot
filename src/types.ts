@@ -1,3 +1,7 @@
+//
+// Holds every abstract type & interface used in the code.
+//
+
 import { Message } from "discord.js"
 
 // Basic types //
