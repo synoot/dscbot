@@ -2,8 +2,7 @@
 // Entrypoint: runs bot, handles commands, loads data, etc.
 //
 
-import djs, { Message } from "discord.js";
-import command from "./command";
+import djs from "discord.js";
 import commands from "./command";
 import data from "./data";
 import { TypeCommand, TypeCommandCategory, TypeObject } from "./types";
@@ -27,6 +26,8 @@ let mode = process.argv[2]
 if (mode === undefined) { mode = "prod"; console.warn("Environment not specified, assuming production.\nUsage: yarn <prod / dev>") }
 
 const fileName = `./save/main${mode === "dev" ? "-dev.json" : ".json"}`
+
+base.loadFromFile(fileName)
 
 let prefix : string = ""
 let token : string = ""
