@@ -84,7 +84,8 @@ class DataBase implements TypeDataBase {
         const fh = index.getFHelper()
         const j = await fh.readFileJSON(path)
 
-        console.log(`Loaded JSON ${j} from path ${path}`)
+        console.log(j)
+        console.log(`^ loaded from ${path}`)
 
         for (const catn in j) {
             const cat = new DataCategory(catn)
@@ -164,8 +165,6 @@ class DirectoryReader {
             for (let x = 0; x < arr.length; x++) {
                 const dt = arr[x];
                 const absPath = path.resolve(folder, dt.name);
-
-                console.log(folder, absPath)
 
                 if (dt.isFile() && path.extname(dt.name) === ".js") {
                     const cmd = require(absPath);
