@@ -34,7 +34,8 @@ let token : string = ""
 // gettr
 
 function getPrefix() { return prefix }
-function getHelper() { return dataHelper }
+function getDHelper() { return dataHelper }
+function getFHelper() { return fileHelper }
 function getReader() { return dirReader }
 
 // functions/handlers/callbacks/whatever
@@ -53,6 +54,8 @@ function refreshCommands() {
 }
 
 async function onMessage(msg : djs.Message) {
+    if (msg.author.bot) return
+
     const spl = msg.content.split(" ")
     const cmd = cHandler.getCommand(spl[0].substr(prefix.length))
 
@@ -121,4 +124,4 @@ fileHelper.readFileJSON('./save/config.json').then((dat) => onLoad(dat)).catch((
 
 // Export getters and thing a ma bobbers
 
-export default { getPrefix, getHelper, getReader }
+export default { getPrefix, getDHelper, getFHelper, getReader }

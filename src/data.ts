@@ -5,6 +5,7 @@
 import { StorageType, TypeDataBase, TypeDataCategory, TypeDataHelper, TypeFileHelper, TypeObject } from "./types";
 import fs from "fs/promises";
 import path from "path";
+import index from "./index"
 
 //
 // DataCategory holds all of the data, stored under a category for organization and to save space when naming keys.
@@ -55,10 +56,47 @@ class DataBase implements TypeDataBase {
     getCategory(key : string) { return this.categories.get(key) }
     getCategoryExists(key : string) { return this.categories.get(key) !== undefined }
 
-    // do later
+    async writeToFile(path : string) {
+        await fs.access(path).catch((err) => console.warn(err))
 
-    writeToFile() {}
-    loadFromFile() {}
+        const fh = index.getFHelper()
+        
+        let s : TypeObject<any> /* save object */ = {}
+
+        this.categories.forEach((cat) => {
+            const sc : TypeObject<any> /* save object (category) */ = {}
+            
+            cat.data.forEach((dat, key) => {
+                sc[key] = dat
+            })
+            
+            s[cat.name] = sc
+        })
+
+        return fh.saveFileJSON(path, s).then(() => {
+            return new Promise((res) => { res() }) as Promise<void>
+        })
+    }
+
+    async loadFromFile(path : string) {
+        await fs.access(path).catch((err) => console.warn(err)) //validate path
+
+        const fh = index.getFHelper()
+        const j = await fh.readFileJSON(path)
+
+        console.log(`Loaded JSON ${j} from path ${path}`)
+
+        for (const catn in j) {
+            const cat = new DataCategory(catn)
+            this.addCategory(cat)
+
+            for (const valn in j[catn]) {
+                cat.addData(valn, j[catn][valn])
+            }
+        }
+
+        return new Promise((res) => { res() }) as Promise<void>;
+    }
 }
 
 class DataHelper implements TypeDataHelper {
@@ -73,7 +111,7 @@ class DataHelper implements TypeDataHelper {
     }
 
     // Gets data in the specified category, and makes a new entry with the fallback value if it doesn't exist
-    // ex getData("doesnt_exist", 1, category) -> category.addData("doesnt_exist", 1), return 1
+    // ex getData("doesnt_exist", 1, category) -> category.addData("doesnt_exist", 1) -> return 1
     getData(key : string, fallback : StorageType, category : DataCategory) {
         let d = category.getData(key)
         return d === undefined ? category.addData(key, fallback) : d
