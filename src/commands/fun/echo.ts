@@ -1,4 +1,4 @@
-import command from "../command";
+import command from "../../command";
 
 module.exports = {
     command: new command.Command({

@@ -127,11 +127,7 @@ class FileHelper implements TypeFileHelper {
                 const buff = await fs.readFile(path);
                 const j = JSON.parse(buff.toString());
                 return await (new Promise((res, rej) => {
-                    if (Object.keys(j).length >= 1) {
-                        res(j);
-                    } else {
-                        rej("Invalid JSON object.");
-                    }
+                    res(j);
                 }) as Promise<TypeObject<any>>);
             } catch (err) {
                 throw err;

@@ -90,10 +90,12 @@ class CommandHandler implements TypeCommandHandler {
                 this.addCategory(cat_1);
 
                 for (const n2 in val[n]) {
-                    const v2 = <Command>val[n][n2].command;
+                    const v2 = val[n][n2].command;
 
-                    cat_1.addCommand(v2);
-                    this.addCommand(v2)
+                    if (v2 instanceof Command) {
+                        cat_1.addCommand(v2);
+                        this.addCommand(v2)
+                    }
                 }
             }
         }
