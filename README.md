@@ -2,13 +2,20 @@
 
 Another rewrite. This will likely become the main branch in the future.
 
-## Planned additions:
+## Planned additions
 
-* Discord.js-ify code (use native classes)
-* Streamline index.ts (it doesn't need to be as long as it is)
-* Less source files (seriously, I don't need six of them)
-* Clean up command structure (a singular module.exports)
-* Remove libraries such as require-dir (if I have my own libraries in my source, I have more control over what it does)
-* Optimize and document code (more of a learning resource)
-* REALLY async-ify my code (async is so much nicer to work with!)
-* Clean up file structure, outside of /src (I also need to optimize my save space!)
+* Change the integrated systems (commands & xp) into a plugin-like structure, to allow fully reloading them at run time
+* Add an HTTP server module that lets someone configure the bot from a website
+* Allow -reload to reload modules
+
+## Planned module structure
+
+Modules will be an ES6 module, and it'd export a main function that takes in parameters.
+The point of modules are to separate systems that rely solely on the index file into other files, to allow dynamic changes, and to tidy the index file.
+
+Modules may be disabled, and will export commands - disabled modules' commands are not registered.
+
+For example, here's what a theoretical XP module would do:
+
+xp_main(msg, guild_id) -> gets guild options, if enabled, does xp calculations, and saves data
+command_main(msg, guild_id) -> checks if the message mentions a command, and runs it
