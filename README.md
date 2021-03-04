@@ -18,4 +18,5 @@ Modules may be disabled, and will export commands - disabled modules' commands a
 For example, here's what a theoretical XP module would do:
 
 xp_main(msg, guild_id) -> gets guild options, if enabled, does xp calculations, and saves data
+
 command_main(msg, guild_id) -> checks if the message mentions a command, and runs it
