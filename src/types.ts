@@ -71,6 +71,7 @@ export interface TypeDataCategory {
     data : Map<string, StorageType>
 
     addData(key : string, value : StorageType) : StorageType
+    removeData(key : string) : void
     getData(key : string) : StorageType | undefined
 
     getDataInt(key : string) : number | undefined

@@ -19,7 +19,7 @@ class DataCategory implements TypeDataCategory {
     constructor(name : string) { this.name = name }
 
     addData(key : string, value : string | number | boolean | any[] | TypeObject<any>) { this.data.set(key, value); return value }
-
+    removeData(key : string) { this.data.delete(key) }
     getData(key : string) { return this.data.get(key) }
     
     getDataInt(key : string) {

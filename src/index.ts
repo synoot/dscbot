@@ -2,13 +2,17 @@
 // Entrypoint: runs bot, handles commands, loads data, etc.
 //
 
-import djs, { TextChannel } from "discord.js";
+import djs from "discord.js";
 import commands from "./command";
 import data from "./data";
-import { TypeCommand, TypeCommandCategory, TypeObject } from "./types";
+import { TypeObject } from "./types";
 
 const base = new data.DataBase()
 const dataHelper = new data.DataHelper(base)
+
+const tbase = new data.DataBase() //temporary data storage; wiped upon the bot shutting down
+const tdHelper = new data.DataHelper(tbase)
+
 const fileHelper = new data.FileHelper()
 
 const dirReader = new data.DirectoryReader()
@@ -32,10 +36,11 @@ base.loadFromFile(fileName)
 let prefix : string = ""
 let token : string = ""
 
-// gettr
+// getter
 
 function getPrefix() { return prefix }
 function getDHelper() { return dataHelper }
+function getTDHelper() { return tdHelper }
 function getFHelper() { return fileHelper }
 function getReader() { return dirReader }
 
@@ -76,6 +81,12 @@ async function onMessage(msg : djs.Message) {
             } else {
                 res.message = res.isReply === true ? `${msg.author}, ${res.message}` : res.message
     
+                if (res.users) {
+                    for (let i = 0; i < res.users.length; i++) {
+                        res.message = res.message.replace(";", `<@${res.users[i]}>`)
+                    }
+                }
+
                 safeSend(msg, res.message)
             }
 
@@ -125,7 +136,7 @@ async function onMessage(msg : djs.Message) {
         msgBase: 50,
         xpChannel: 0,
     }, guildcat)
-
+    
     if (xpOptions.enabled) {
         const xpInfo = < TypeObject<any> > dataHelper.getData(`${msg.author.id}_xpInfo`, {
             xp: 0,
@@ -138,40 +149,38 @@ async function onMessage(msg : djs.Message) {
             streak: 0,
             modifier: 1
         }, guildcat)
-
         const msgChars = clamp(msg.content.length, 0, 500)
-
         const since = (new Date().getTime() / 1000) - (xpInfo.lastMsg / 1000)
-
+    
         if ((new Date().getTime() / 1000) - (xpInfo.spamLastMsg / 1000) >= 15) {
             xpInfo.xp = xpInfo.xp + ((msgChars * xpOptions.xpCharMult) * xpInfo.modifier)
             xpInfo.msgs++
-
+    
             if (xpInfo.msgs <= xpInfo.maxMsgs) {
                 xpInfo.modifier += msgChars * xpOptions.dailyCharMult
             }
-
+    
             if (since >= 86400 && since < 127800) { // 24 hours to 48 hours
                 xpInfo.streak = clamp(xpInfo.streak + 1, 0, 31)
                 xpInfo.msgs = 0
                 xpInfo.lastMsg = new Date().getTime()
-
+    
                 xpInfo.maxMsgs = clamp((xpInfo.streak * xpOptions.msgMult) * xpOptions.maxMsgs, xpOptions.maxMsgs, Infinity)
             } else if (since > 127800) { // missed a day (or multiple, but im lazy)
                 xpInfo.streak = clamp(xpInfo.streak - 1, 0, 31)
                 xpInfo.msgs = 0
                 xpInfo.lastMsg = new Date().getTime()
-
+    
                 xpInfo.maxMsgs = clamp((xpInfo.streak * xpOptions.msgMult) * xpOptions.maxMsgs, xpOptions.maxMsgs, Infinity)
             }
-
+    
             if (xpInfo.xp >= xpInfo.xpTo) { // level up
                 let newRoles : any[] = []
-
+    
                 while (xpInfo.xp >= xpInfo.xpTo) { //do a loop to level up. im sure there's a better way, but i'm not a mathematician
                     xpInfo.level++
                     xpInfo.xpTo *= xpOptions.levelMult
-
+    
                     if (xpOptions.xpRewards[String(xpInfo.level)] !== undefined) {
                         await msg.guild?.roles.fetch(xpOptions.xpRewards[String(xpInfo.level)]).then(role => {
                             if (role) { msg.member?.roles.add(role); newRoles.push(role); newRoles.push(xpInfo.level) }
@@ -180,12 +189,12 @@ async function onMessage(msg : djs.Message) {
                         })
                     }
                 }
-
+    
                 let endString = ""
-
+    
                 if (newRoles.length > 0) {
                     endString = ", and were awarded these roles:\n"
-
+    
                     for (let i = 0; i < newRoles.length; i++) {
                         if (i % 2 === 0) {
                             endString = `${endString}**${newRoles[i].name}** at level **${newRoles[i+1]}**\n`
@@ -194,11 +203,11 @@ async function onMessage(msg : djs.Message) {
                 } else {
                     endString = "!"
                 }
-
+    
                 
                 if (xpOptions.xpChannel !== 0) {
-                    const c = client.channels.cache.get(xpOptions.xpChannel) as TextChannel | undefined
-
+                    const c = client.channels.cache.get(xpOptions.xpChannel) as djs.TextChannel | undefined
+    
                     if (c !== undefined) {
                         safeChannelSend(c, `Congratulations, <@${msg.author.id}>! You've leveled up to level **${xpInfo.level}**${endString}`)
                     }
@@ -206,7 +215,7 @@ async function onMessage(msg : djs.Message) {
                     safeSend(msg, `Congratulations, <@${msg.author.id}>! You've leveled up to level **${xpInfo.level}**${endString}`)
                 }
             }
-
+    
             guildcat.addData(`${msg.author.id}_xpInfo`, xpInfo)
         }
     }
@@ -242,7 +251,7 @@ fileHelper.readFileJSON('./save/config.json').then((dat) => onLoad(dat)).catch((
 
 // Export getters and thing a ma bobbers
 
-export default { getPrefix, getDHelper, getFHelper, getReader }
+export default { getPrefix, getDHelper, getTDHelper, getFHelper, getReader, safeSend, safeChannelSend, client }
 
 setInterval(() => {
     base.writeToFile(fileName)
