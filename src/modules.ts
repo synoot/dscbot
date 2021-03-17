@@ -5,7 +5,6 @@
 import djs from "discord.js"
 import { ModuleMain, TypeCommand } from "./types"
 import data from "./data"
-import index from "./index"
 
 // Contains main function, name, etc.
 

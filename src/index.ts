@@ -3,11 +3,10 @@
 //
 
 import djs from "discord.js";
-import { isJsxAttribute } from "typescript";
 import commands from "./command";
 import data from "./data";
 import mods from "./modules"
-import { TypeCommand, TypeCommandBase, TypeObject } from "./types";
+import { TypeCommand, TypeObject } from "./types";
 
 const base = new data.DataBase()
 const dataHelper = new data.DataHelper(base)
