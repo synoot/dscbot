@@ -2,7 +2,7 @@
 // Holds every abstract type & interface used in the code.
 //
 
-import { Message } from "discord.js"
+import { Client, Message } from "discord.js"
 
 // Basic types //
 
@@ -63,8 +63,19 @@ export interface TypeCommandBase {
     wipe() : void
 }
 
+// Module types //
 
-// SaveHandler types //
+export type ModuleMain = { (msg : Message , client : Client) : Promise<void> }
+
+// Data types //
+
+export interface TypeDataHolder<T> {
+    data : Map<string, T>
+
+    addData(key : string, value : T) : T
+    getData(key : string) : T | undefined
+    removeData(key : string) : T | undefined
+}
 
 export interface TypeDataCategory {
     name : string

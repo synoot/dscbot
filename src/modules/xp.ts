@@ -6,13 +6,16 @@
 import djs from "discord.js"
 import index from "../index"
 import command from "../command"
+import modules from "../modules"
 import { TypeObject } from "../types"
 
 const clamp = (num : number, min : number, max : number) => Math.min(Math.max(num, min), max)
 
 const dhelper = index.getDHelper()
 
-async function main(msg : djs.Message, guildid : string) {
+async function main(msg : djs.Message, client : djs.Client) {
+    const guildid = <string>msg.guild?.id
+
     const guildcat = dhelper.getCategory(guildid)
 
     const xpOptions = < TypeObject<any> > dhelper.getData("xpOptions", {
@@ -171,3 +174,14 @@ const commandXP = new command.Command({
         }
     }
 })
+
+const e_module = new modules.Module({
+    name : "xp",
+    description : "XP - levelling, roles, etc.",
+    main : main,
+    commands: [
+        commandXP
+    ]
+})
+
+exports.module = e_module

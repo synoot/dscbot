@@ -79,7 +79,7 @@ class CommandHandler implements TypeCommandHandler {
         for (const n in val) { //either a category or a NodeRequire
             const v = val[n];
 
-            console.log(v)
+            // console.log(v)
 
             if (v?.command instanceof Command) {
                 const cat = this.commandBase.getCategory("uncategorized");

@@ -2,25 +2,33 @@
 // Contains data management classes.
 //
 
-import { StorageType, TypeDataBase, TypeDataCategory, TypeDataHelper, TypeFileHelper, TypeObject } from "./types";
+import { StorageType, TypeDataBase, TypeDataCategory, TypeDataHelper, TypeDataHolder, TypeFileHelper, TypeObject } from "./types";
 import fs from "fs/promises";
 import path from "path";
 import index from "./index"
+
+abstract class AbstractDataHolder<T> implements TypeDataHolder<T> {
+    data : Map<string, T> = new Map()
+
+    abstract addData(key : string, value : T) : T;
+    abstract getData(key : string) : T | undefined;    
+    abstract removeData(key : string) : T | undefined;
+}
 
 //
 // DataCategory holds all of the data, stored under a category for organization and to save space when naming keys.
 // Internally, DataCategory holds it's data using a Map.
 //
 
-class DataCategory implements TypeDataCategory {
+class DataCategory extends AbstractDataHolder<StorageType> implements TypeDataCategory {
     data : Map<string, StorageType> = new Map()
     name : string
 
-    constructor(name : string) { this.name = name }
+    constructor(name : string) { super(); this.name = name }
 
-    addData(key : string, value : string | number | boolean | any[] | TypeObject<any>) { this.data.set(key, value); return value }
-    removeData(key : string) { this.data.delete(key) }
+    addData(key : string, value : StorageType) { this.data.set(key, value); return value }
     getData(key : string) { return this.data.get(key) }
+    removeData(key : string) { const v = this.data.get(key); this.data.delete(key); return v }
     
     getDataInt(key : string) {
         const data = this.data.get(key)
@@ -48,13 +56,21 @@ class DataCategory implements TypeDataCategory {
 // Internally, DataBase holds all of it's data using a Map.
 //
 
-class DataBase implements TypeDataBase {
+class DataBase extends AbstractDataHolder<DataCategory> implements TypeDataBase {
     // holds all of this Base's categories
     categories : Map<string, DataCategory> = new Map()
 
-    addCategory(value : DataCategory) { this.categories.set(value.name, value); return value }
-    getCategory(key : string) { return this.categories.get(key) }
-    getCategoryExists(key : string) { return this.categories.get(key) !== undefined }
+    addData(key : string, value : DataCategory) { this.categories.set(key, value); return value }
+    getData(key : string) { return this.categories.get(key) }
+    removeData(key : string) { const v = this.categories.get(key); this.categories.delete(key); return v }
+
+    // helpers/aliases
+
+    addCategory(value : DataCategory) { return this.addData(value.name, value) }
+    removeCategory(key : string) { return this.removeData(key) }
+    getCategory(key : string) { return this.getData(key) }
+    getCategoryExists(key : string) { return this.getData(key) !== undefined }
+
 
     async writeToFile(path : string) {
         await fs.access(path).catch((err) => console.warn(err))
@@ -84,8 +100,9 @@ class DataBase implements TypeDataBase {
         const fh = index.getFHelper()
         const j = await fh.readFileJSON(path)
 
-        console.log(j)
-        console.log(`^ loaded from ${path}`)
+        // for debugging purposes //
+        // console.log(j)
+        // console.log(`^ loaded from ${path}`)
 
         for (const catn in j) {
             const cat = new DataCategory(catn)
@@ -113,7 +130,7 @@ class DataHelper implements TypeDataHelper {
 
     // Gets data in the specified category, and makes a new entry with the fallback value if it doesn't exist
     // ex getData("doesnt_exist", 1, category) -> category.addData("doesnt_exist", 1) -> return 1
-    getData(key : string, fallback : StorageType, category : DataCategory) {
+    getData(key : string, fallback : StorageType, category : TypeDataCategory) {
         let d = category.getData(key)
         return d === undefined ? category.addData(key, fallback) : d
     }
@@ -184,4 +201,4 @@ class DirectoryReader {
 }
 
 // expose both classes
-export default { DataBase, DataCategory, DataHelper, FileHelper, DirectoryReader }
+export default { AbstractDataHolder, DataBase, DataCategory, DataHelper, FileHelper, DirectoryReader }
