@@ -9,20 +9,21 @@ import data from "./data"
 // Contains main function, name, etc.
 
 class Module extends data.AbstractDataHolder<TypeCommand> {
+    private isEnabled : boolean = true
     name : string
     description : string
     debugPath !: string
-    enabled : boolean = true
+    canDisable : boolean
     commands : Map<string, TypeCommand> = new Map()
     main : ModuleMain
 
-    constructor(opts : { name : string, description : string, main : ModuleMain, commands? : TypeCommand[] }) {
+    constructor(opts : { name : string, description : string, main : ModuleMain, commands? : TypeCommand[], disableable? : boolean }) {
         super()
 
         this.name = opts.name
         this.description = opts.description
         this.main = opts.main
-
+        this.canDisable = opts.disableable || true
         if (opts.commands) {
             for (let x = 0; x < opts.commands.length; x++) {
                 this.addCommand(opts.commands[x])
@@ -41,6 +42,14 @@ class Module extends data.AbstractDataHolder<TypeCommand> {
     addCommand(command : TypeCommand) { this.addData(command.name, command) }
     getCommand(name : string) { return this.getData(name) }
     removeCommand(name : string) { return this.removeData(name) }
+
+    public get enabled() {
+        return this.canDisable === true ? this.isEnabled : true
+    }
+
+    public set enabled(e : boolean) {
+        this.enabled = this.canDisable === true ? e : true
+    }
 }
 
 // Contains helper functions & modules
