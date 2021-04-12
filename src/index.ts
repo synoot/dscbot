@@ -40,13 +40,16 @@ base.loadFromFile(fileName)
 let prefix : string = ""
 let token : string = ""
 
-// getter
+// getter, i should probably improve this
 
 function getPrefix() { return prefix }
 function getDHelper() { return dataHelper }
 function getTDHelper() { return tdHelper }
 function getFHelper() { return fileHelper }
 function getReader() { return dirReader }
+function getCHandler() { return cHandler }
+function getModuleCmdList() { return m_cmdList }
+function getModuleBase() { return mbase }
 
 // functions/handlers/callbacks/whatever
 
@@ -74,74 +77,7 @@ async function onMessage(msg : djs.Message) {
     if (msg.author.bot) return
     if (!msg.guild?.id) return
 
-    const spl = msg.content.split(" ")
-    let cmdn = spl[0].substr(prefix.length)
-
-    console.log(cmdn, m_cmdList.get(cmdn))
-
-    let cmd = m_cmdList.get(cmdn)
-
-    cmd = cmd !== undefined ? cmd : cHandler.getCommand(cmdn)
-
     mbase.callMain(msg, client)
-
-    if (cmd !== undefined) {
-        if (cmd.prefix === msg.content.substr(0, prefix.length)){ /* this command matches, check the prefix */
-            const res = await cmd.callback(msg)
-
-            if (res.embed !== undefined) {
-                safeSend(msg, {embed: res.embed})
-            } else {
-                res.message = res.isReply === true ? `${msg.author}, ${res.message}` : res.message
-    
-                if (res.users) {
-                    for (let i = 0; i < res.users.length; i++) {
-                        res.message = res.message.replace(";", `<@${res.users[i]}>`)
-                    }
-                }
-
-                safeSend(msg, res.message)
-            }
-        }
-    } else if (spl[0] === `${prefix}reload` && msg.author.id === "152906725350047746") {
-        const m = await safeSend(msg, ":repeat: Reloading.. may take some time.")
-        await refreshCommands()
-        safeEdit(m, `:+1: Finished! Use ${prefix}help to view any new commands/modules.`)
-    } else if (spl[0] === `${prefix}help`) {
-        const sc /* selected category */ = cHandler.getCategory(spl[1])
-        const sm /* selected module */ = mbase.getModule(spl[1])
-        const cats /* categories */ = cHandler.getCategories()
-        let hstring /* help string */ = `Default prefix: \`${prefix}\`\nThe prefix for a command is next to it's name, ex: \`${prefix}help\`\n\n`
-
-        if (sm) { //specific category
-            hstring = `${hstring}**${sm.name} (${sm.enabled === true ? "Enabled" : "Disabled"})**:\n`
-            if (sm.commands.size > 0) {
-                sm.commands.forEach((cmd) => { hstring = `${hstring}\t**${cmd.prefix}${cmd.name}** - **${cmd.description}**`})
-            } else {
-                hstring = `${hstring}**\tNo loaded commands.`
-            }
-        } else if (sc) {
-            if (sc.commands.size > 0) {
-                hstring = `${hstring}**${sc.name}**:\n`
-                sc.commands.forEach((cmd) => { hstring = `${hstring}\t**${cmd.prefix}${cmd.name}** - **${cmd.description}**\n` })
-            } else {
-                hstring = `${hstring}**${sc.name}**:\n\tNo loaded commands.`
-            }
-        } else { //no category
-            if (mbase.modules.size > 0) {
-                hstring = `${hstring}Modules:\n`
-    
-                mbase.modules.forEach((m, n) => {
-                    hstring = `${hstring}\t**${n} (${m.enabled === true ? "Enabled" : "Disabled"})**\n\t\t**${m.description}**\n\t\t\tPath: \`${m.debugPath}\`\n\t\t\tTotal commands: \`${m.commands.size}\`\n\n`
-                })
-            }
-
-            hstring = `${hstring}Categories:\n`
-            cats.forEach((cat) => { if (cat.commands.size > 0) { hstring = `${hstring}\t**${cat.name}** - total commands: **${cat.commands.size}**\n` } })
-        }
-
-        safeSend(msg, hstring)
-    }
 }
 
 function onLogin() {
@@ -177,7 +113,7 @@ fileHelper.readFileJSON('./save/config.json').then((dat) => onLoad(dat)).catch((
 
 // Export getters and thing a ma bobbers
 
-export default { getPrefix, getDHelper, getTDHelper, getFHelper, getReader, safeSend, safeChannelSend, client }
+export default { getPrefix, getDHelper, getTDHelper, getFHelper, getReader, safeSend, safeChannelSend, safeEdit, getCHandler, getModuleCmdList, getModuleBase, refreshCommands, client }
 
 setInterval(() => {
     base.writeToFile(fileName)

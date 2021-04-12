@@ -23,7 +23,8 @@ class Module extends data.AbstractDataHolder<TypeCommand> {
         this.name = opts.name
         this.description = opts.description
         this.main = opts.main
-        this.canDisable = opts.disableable || true
+        this.canDisable = opts.disableable !== undefined ? opts.disableable : true
+
         if (opts.commands) {
             for (let x = 0; x < opts.commands.length; x++) {
                 this.addCommand(opts.commands[x])
@@ -48,7 +49,7 @@ class Module extends data.AbstractDataHolder<TypeCommand> {
     }
 
     public set enabled(e : boolean) {
-        this.enabled = this.canDisable === true ? e : true
+        this.isEnabled = this.canDisable === true ? e : true
     }
 }
 
