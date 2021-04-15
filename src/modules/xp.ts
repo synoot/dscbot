@@ -12,6 +12,7 @@ import { TypeObject } from "../types"
 const clamp = (num : number, min : number, max : number) => Math.min(Math.max(num, min), max)
 
 const dhelper = index.getDHelper()
+const mbase = index.getModuleBase()
 
 async function main(msg : djs.Message, client : djs.Client) {
     const guildid = <string>msg.guild?.id
@@ -162,7 +163,7 @@ const commandXP = new command.Command({
                         }
                     ],
                     footer: {
-                        text: `XP is ${xpOptions.enabled === true ? "enabled" : "disabled"} | ${xpInfo.modifier.toFixed(2)}x multiplier | ${remaining < 0 ? 0 : remaining} messages left today`
+                        text: `XP is ${(xpOptions.enabled === true) && (mbase.getModuleEnabled("xp")) ? "enabled" : "disabled"} | ${xpInfo.modifier.toFixed(2)}x multiplier | ${remaining < 0 ? 0 : remaining} messages left today`
                     }
                 }
             }

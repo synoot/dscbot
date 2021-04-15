@@ -67,6 +67,8 @@ class ModuleBase extends data.AbstractDataHolder<Module> {
     getModule(name : string) { return this.getData(name) }
     removeModule(name : string) { return this.removeData(name) }
 
+    getModuleEnabled(name : string) { const mod = this.getModule(name) ; if (mod) { return mod.enabled } else { throw `[modules] invalid module name passed (name: ${name})` } }
+
     wipe() { this.modules = new Map() }
 
     async loadModules() {

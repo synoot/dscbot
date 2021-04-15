@@ -10,7 +10,7 @@
     "rd": "rd /S /Q build && mkdir build"
   },
   "keywords": [],
-  "author": "",
+  "author": "synoot",
   "license": "ISC",
   "devDependencies": {
     "@types/require-dir": "^1.0.1"
@@ -22,5 +22,6 @@
     "owoify-js": "^1.0.7",
     "twitter": "^1.7.1",
     "typescript": "^4.1.3"
-  }
+  },
+  "repository": { "url": "https://www.github.com/synoot/dscbot", "type": "git" }
 }
