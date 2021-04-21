@@ -6,7 +6,7 @@ import djs from "discord.js"
 import modules from "../modules"
 import command from "../command"
 import index from "../index"
-import { TypeDataCategory } from "../types"
+import { AuditLogDetails, TypeObject } from "../types"
 
 const dhelper = index.getDHelper()
 const lengthToMultiplier : { [index : string] : number } = {
@@ -60,6 +60,42 @@ function parseUser(input : string) {
     return index.client.users.cache.get(id)
 }
 
+async function modlog(details : AuditLogDetails) {
+    const guildcat = dhelper.getCategory(details.guild.id)
+    const logOptions = guildcat.getData("logOptions")
+
+    if (logOptions instanceof Object && !(logOptions instanceof Array)) {
+        const logChannel = logOptions.logChannel
+        const channel = details.guild.channels.cache.get(logChannel) as djs.TextChannel | undefined
+
+        if (channel) {
+            channel.send({ embed : {
+                color: details.color || 0x4192fc,
+                title: 'Moderation Log',
+                author: {
+                    name: `${details.sender.username}#${details.sender.discriminator}`,
+                    icon_url: details.sender.displayAvatarURL() || "https://cdn.discordapp.com/attachments/821138398126538833/821138445413253180/lol.jpg" //default avatar url
+                },
+                description: details.description || "*No description provided.*",
+                fields: (details.arguments !== undefined ? 
+                [
+                    {
+                        name: "Arguments",
+                        value: details.arguments.join(", ")
+                    }
+                ] 
+                : undefined),
+                timestamp: details.date,
+                footer: {
+                    text: 'Moderation features supplied by (placeholder bot name)',
+                    icon_url: index.client.user?.displayAvatarURL() || "https://cdn.discordapp.com/attachments/821138398126538833/821138445413253180/lol.jpg" 
+                }
+            }})
+        }
+    }
+
+}
+
 // check if the guild has a muted role - if not, it makes one and returns it (right over the @everyone role)
 
 async function getMutedRole(guild : djs.Guild) : Promise<djs.Role | string> {
@@ -102,6 +138,12 @@ async function getMutedRole(guild : djs.Guild) : Promise<djs.Role | string> {
 
 // commands
 
+const configs : TypeObject<Array<string>> = { // [type , variable]
+    "log_channel": ["channel", "logChannel"],
+    "log_verbose": ["boolean", "logVerbose"],
+    "log_enabled": ["boolean", "logEnabled"]
+}
+
 const commandMute = new command.Command({
     name: "mute",
     description: `${index.getPrefix()}mute <user @ / user id> <duration (Xs/m/h/d)> <reason> ex. ${index.getPrefix()}mute 152906725350047746 5m you suck | Outputs the supplied reason to the moderation log, and the moderator who used it.`,
@@ -143,12 +185,85 @@ const commandMute = new command.Command({
 
         if (guildTargetMember?.roles.cache.get(mutedRole.id)) { return { isReply: true, message: "this user is already muted!" } }
 
-        guildCat.addData(`${msg.author.id}_mute`, new Date().getTime() + duration)
-        guildTargetMember?.roles.add(mutedRole, `Member was muted by ${msg.author.username}#${msg.author.discriminator}`)
+        guildCat.addData(`${guildTargetMember?.id}_mute`, new Date().getTime() + duration)
+        guildTargetMember?.roles.add(mutedRole, `Member was muted by ${msg.author.username}#${msg.author.discriminator} for reason: ${reason}`);
 
+        const arr = dhelper.getData(`muted`, [], guildCat) as any[]
+        arr.push(guildTargetMember?.id)
+
+        guildCat.addData(`muted`, arr)
+
+        modlog({
+            date: new Date().getTime(),
+            sender: msg.author,
+            guild: msg.guild as djs.Guild,
+            arguments: [`<@${userMention.id}>`, splMsg[2], `"${reason}"`],
+            description: `Muted \`${userMention.username}#${userMention.discriminator}\` (<@${userMention.id}>) for reason: "${reason}"`
+        })
+        
         return {
             isReply: true,
-            message: `muted ${guildTargetMember?.nickname || userMention.username} for ${duration / 1000} seconds`
+            message: `muted <@${userMention.id}> for ${duration / 1000} seconds`
+        }
+    }
+})
+
+const commandLog = new command.Command({
+    name: "logconfig",
+    description: "Options for the moderation log.",
+    callback: async (msg : djs.Message) => {
+        const guildCat = dhelper.getCategory(<string>msg.guild?.id)
+        const spl = msg.content.split(" ")
+
+        const variable = spl[1]
+        const value : any = spl[2]
+
+        const change = configs[variable]
+
+        if (change && msg.guild?.member(msg.author)?.hasPermission("MANAGE_MESSAGES")) {
+            const logOptions = < TypeObject<any> > dhelper.getData("logOptions", {}, guildCat)
+
+            if (logOptions) {
+                const type = change[0]
+
+                let v = type === "number" ? Number(value) : type === "boolean" ? value === "true" : type === "channel" ? value.slice(2, value.length - 1) : value
+
+                if ((isNaN(value) && type === "number") || (value !== "false" && value !== "true" && type === "boolean") || ((value.substr(0, 2) !== "<#" || value.substr(value.length - 1) !== ">") && type === "channel")) {
+                    return {
+                        isReply: true,
+                        message: `${variable}'s value must be a(n) ${type}.`
+                    }
+                } else {
+                    logOptions[change[1]] = v
+                    guildCat.addData("logOptions", logOptions)
+
+                    return {
+                        isReply: true,
+                        message: `changed ${variable} to ${value}`
+                    }
+                }
+            } else {
+                return {
+                    isReply: true,
+                    message: "this guild may be bugged, as it lacks a category. Please try again."
+                }
+            }
+        } else if (!change) {
+            let str = "available options:\n"
+
+            for (const opt in configs) {
+                str = `${str}\t**${opt}** : **${configs[opt][0]}**\n`
+            }
+
+            return {
+                isReply: true,
+                message: str
+            }
+        } else {
+            return {
+                isReply: true,
+                message: "you do not have the Manage Messages permission."
+            }
         }
     }
 })
@@ -157,7 +272,57 @@ const module_moderation = new modules.Module({
     name: "moderation",
     description: "Provides moderation commands, and has it's own custom detailed audit log.",
     main: async () => {},
-    commands: [ commandMute ]
+    loop: async () => {
+        // check muted (it's assumed that every top level category in the default database is a guild category - it should stay that way)
+        return dhelper.base.categories.forEach(async (cat) => {
+            const guild = await index.client.guilds.fetch(cat.name)
+            const role = await getMutedRole(guild)
+
+            if (typeof role === "string") { throw role }
+
+            const mutedArr = cat.getData('muted')
+            let newArr = [] //arr with updated mutes
+
+            // console.log(mutedArr, mutedArr instanceof Array)
+
+            if (mutedArr instanceof Array) {
+                // it is definitely an array
+
+                for (let x = 0; x < mutedArr.length; x++) {
+                    const mutedDuration = cat.getData(`${mutedArr[x]}_mute`)
+                    // console.log(x, mutedArr[x], mutedDuration)
+
+                    if (mutedDuration) {
+                        // console.log(mutedDuration, new Date().getTime())
+
+                        if (Number(mutedDuration) > new Date().getTime()) {
+                            newArr.push(mutedArr[x])
+                        } else {
+
+                            if (guild !== null) {
+                                const member = guild.member(mutedArr[x])
+
+                                if (member) {
+                                    member.roles.remove(role, "Mute duration over").catch((res) => { console.error(res) })
+                                    modlog({
+                                        date: new Date().getTime(),
+                                        sender: index.client.user as djs.User,
+                                        guild: guild,
+                                        description: `Unmuted member \`${member.user.username}#${member.user.discriminator}\` (<@${member.id}>) automatically.`
+                                    })
+                                }
+                            } else {
+                                throw "What the fuck"
+                            }
+                        }
+                    }
+                }
+            }
+
+            cat.addData('muted', newArr)
+        })
+    },
+    commands: [ commandMute, commandLog ]
 })
 
 exports.module = module_moderation

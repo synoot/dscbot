@@ -6,7 +6,7 @@ import djs from "discord.js";
 import commands from "./command";
 import data from "./data";
 import mods from "./modules"
-import { TypeCommand, TypeObject } from "./types";
+import { ModuleLoop, TypeCommand, TypeObject } from "./types";
 
 const base = new data.DataBase()
 const dataHelper = new data.DataHelper(base)
@@ -21,6 +21,7 @@ const cHandler = new commands.CommandHandler()
 
 const mbase = new mods.ModuleBase()
 let m_cmdList : Map<string, TypeCommand>
+let m_Loop : ModuleLoop[] | undefined
 
 const client = new djs.Client({
     disableMentions: "everyone" //dont ping everyone you little dickweed
@@ -39,6 +40,7 @@ base.loadFromFile(fileName)
 
 let prefix : string = ""
 let token : string = ""
+let ownerID : string = ""
 
 // getter, i should probably improve this
 
@@ -50,6 +52,8 @@ function getReader() { return dirReader }
 function getCHandler() { return cHandler }
 function getModuleCmdList() { return m_cmdList }
 function getModuleBase() { return mbase }
+// gets the owner as specified in the config, or just throws an error
+function getOwner() { if ( ownerID ) { return ownerID } throw "Owner is not specified in the configuration file. Please add an 'owner_id' line to the 'config.json' file." }
 
 // functions/handlers/callbacks/whatever
 
@@ -71,6 +75,7 @@ async function refreshCommands() {
 
     await mbase.loadModules();
     m_cmdList = mbase.getCommandList();
+    m_Loop = mbase.getLoops();
 }
 
 async function onMessage(msg : djs.Message) {
@@ -95,6 +100,7 @@ function onLogin() {
 async function onLoad(dat : TypeObject<any>) {
     prefix = <string>dat[`prefix_${mode}`]
     token = <string>dat[`token_${mode}`]
+    ownerID = <string>dat['owner_id']
     
     await refreshCommands()
 
@@ -113,8 +119,20 @@ fileHelper.readFileJSON('./save/config.json').then((dat) => onLoad(dat)).catch((
 
 // Export getters and thing a ma bobbers
 
-export default { getPrefix, getDHelper, getTDHelper, getFHelper, getReader, safeSend, safeChannelSend, safeEdit, getCHandler, getModuleCmdList, getModuleBase, refreshCommands, client }
+export default { getPrefix, getDHelper, getTDHelper, getFHelper, getReader, safeSend, safeChannelSend, safeEdit, getCHandler, getModuleCmdList, getModuleBase, refreshCommands, getOwner, client }
+
+// save loop
 
 setInterval(() => {
     base.writeToFile(fileName)
 }, 5000)
+
+// loop every ~1s for modules
+
+setInterval(() => {
+    if (m_Loop !== undefined) {
+        for (let x = 0; x < m_Loop.length; x++) {
+            m_Loop[x]()
+        }
+    }
+}, 1000)

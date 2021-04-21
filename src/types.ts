@@ -2,7 +2,7 @@
 // Holds every abstract type & interface used in the code.
 //
 
-import { Client, Message } from "discord.js"
+import { Client, Guild, Message, User } from "discord.js"
 
 // Basic types //
 
@@ -66,6 +66,7 @@ export interface TypeCommandBase {
 // Module types //
 
 export type ModuleMain = { (msg : Message , client : Client) : Promise<void> }
+export type ModuleLoop = { () : void }
 
 // Data types //
 
@@ -111,4 +112,15 @@ export interface TypeDataHelper {
 export interface TypeFileHelper {
     readFileJSON(path : string) : Promise<TypeObject<any>>
     saveFileJSON(path : string, data : TypeObject<any>) : Promise<boolean> // For running code after it has saved
+}
+
+// Moderation Types //
+
+export interface AuditLogDetails {
+    date : number
+    sender : User
+    guild : Guild
+    arguments? : string[]
+    color? : number
+    description? : string
 }

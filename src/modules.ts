@@ -3,7 +3,7 @@
 //
 
 import djs from "discord.js"
-import { ModuleMain, TypeCommand } from "./types"
+import { ModuleLoop, ModuleMain, TypeCommand } from "./types"
 import data from "./data"
 
 // Contains main function, name, etc.
@@ -16,14 +16,16 @@ class Module extends data.AbstractDataHolder<TypeCommand> {
     canDisable : boolean
     commands : Map<string, TypeCommand> = new Map()
     main : ModuleMain
+    moduleLoop : ModuleLoop | undefined
 
-    constructor(opts : { name : string, description : string, main : ModuleMain, commands? : TypeCommand[], disableable? : boolean }) {
+    constructor(opts : { name : string, description : string, main : ModuleMain, commands? : TypeCommand[], disableable? : boolean, loop? : ModuleLoop }) {
         super()
 
         this.name = opts.name
         this.description = opts.description
         this.main = opts.main
         this.canDisable = opts.disableable !== undefined ? opts.disableable : true
+        this.moduleLoop = opts.loop
 
         if (opts.commands) {
             for (let x = 0; x < opts.commands.length; x++) {
@@ -97,6 +99,16 @@ class ModuleBase extends data.AbstractDataHolder<Module> {
         let c : Map<string, TypeCommand> = new Map()
 
         this.modules.forEach((m) => { if (m.enabled) { m.commands.forEach((cm) => { c.set(cm.name, cm) }) } })
+
+        return c
+    }
+
+    // gets every registered loop from every enabled module
+
+    getLoops() {
+        let c : ModuleLoop[] = []
+
+        this.modules.forEach((m) => { if (m.enabled && m.moduleLoop !== undefined) { c.push(m.moduleLoop) } })
 
         return c
     }

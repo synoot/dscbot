@@ -119,12 +119,13 @@ const commandXP = new command.Command({
     description: "XP stats!",
     async callback(msg) {
         const guildcat = dhelper.getCategory(<string>msg.guild?.id) // guild is guaranteed to exist since it isn't called if guild doesn't exist
-        const xpInfo = < TypeObject<any> | undefined > guildcat.getData(`${msg.author.id}_xpInfo`)
-        const xpOptions = < TypeObject<any> > guildcat.getData(`xpOptions`)
-
+        
         let user = msg.mentions.users.first()
         
         user = user === undefined ? msg.author : user
+
+        const xpInfo = < TypeObject<any> | undefined > guildcat.getData(`${user.id}_xpInfo`)
+        const xpOptions = < TypeObject<any> > guildcat.getData(`xpOptions`)
         
         if (xpInfo) {
             let XPOffset = xpInfo.xpTo / xpOptions.levelMult

@@ -90,11 +90,18 @@ const commandReload = new command.Command({
     name: "reload",
     description: "Reloads commands & modules",
     callback: async (msg : djs.Message) => {
-        index.safeSend(msg, ":+1: Reloading! Give it a second.")
-        await index.refreshCommands()
-        return {
-            isReply: false,
-            message: ":repeat: All done. Check `-help` to see any new commands or modules."
+        if (msg.author.id === index.getOwner()) {
+            index.safeSend(msg, ":+1: Reloading! Give it a second.")
+            await index.refreshCommands()
+            return {
+                isReply: false,
+                message: ":repeat: All done. Check `-help` to see any new commands or modules."
+            }
+        } else {
+            return {
+                isReply: true,
+                message: "you must be the bot's owner to use this command."
+            }
         }
     }
 })

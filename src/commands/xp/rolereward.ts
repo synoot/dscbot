@@ -21,8 +21,10 @@ exports.command = new command.Command({
         const guildcat = helper.getCategory(<string>msg.guild?.id)
 
         const spl = msg.content.split(" ")
+        if (spl.length < 3) { return { isReply: true, message: "usage: xpreward <@role> <level>" } }
         let role = spl[1]
         let level = spl[2]
+
 
         let roleid = role.substr(3, role.length - 4)
 
