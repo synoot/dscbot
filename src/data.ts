@@ -1,204 +1,47 @@
-//
-// Contains data management classes.
-//
+import fs from "fs/promises"
+import path from "path"
+import { BasicObject } from "./types";
 
-import { StorageType, TypeDataBase, TypeDataCategory, TypeDataHelper, TypeDataHolder, TypeFileHelper, TypeObject } from "./types";
-import fs from "fs/promises";
-import path from "path";
-import index from "./index"
+export class AbstractMapData<T> {
+    private data : Map<string, T> = new Map()
 
-abstract class AbstractDataHolder<T> implements TypeDataHolder<T> {
-    data : Map<string, T> = new Map()
+    /**
+     * Adds data to `this.data`. Returns `value`.
+     * @param key - the key to store the data under, used in retrieval.
+     * @param value - the value to store, retrieved using the key provided.
+     */
+    addData(key : string, value : T) : T { this.data.set(key, value) ; return value }
 
-    abstract addData(key : string, value : T) : T;
-    abstract getData(key : string) : T | undefined;    
-    abstract removeData(key : string) : T | undefined;
+    /**
+     * Retrieves data from `this.data`. Returns the data from said key or undefined.
+     * @param key - the key to retrieve data from. Typically used in conjunction with `.addData()`
+     */
+    getData(key : string) : T | undefined { return this.data.get(key) }
+
+    /**
+     * Permanently deletes data from a key. Returns the data under that key or undefined.
+     * @param key - the key to delete data from. Typically used in conjunction with `.addData()`
+     */
+    removeData(key : string) : T | undefined { const d = this.data.get(key) ; this.data.delete(key) ; return d }
 }
 
-//
-// DataCategory holds all of the data, stored under a category for organization and to save space when naming keys.
-// Internally, DataCategory holds it's data using a Map.
-//
+export class JSONReader {
 
-class DataCategory extends AbstractDataHolder<StorageType> implements TypeDataCategory {
-    data : Map<string, StorageType> = new Map()
-    name : string
+    /**
+     * Reads a JSON file from the filesystem and returns an object.
+     * @param path - the path in the filesystem to read from
+     */
+    async readFromPath(filePath : string) {
+        return fs.access(filePath).then(() => {
 
-    constructor(name : string) { super(); this.name = name }
+            return new Promise<BasicObject<any> | string>(async (res, rej) => {
+                if (path.extname(filePath) !== ".json") { rej("Passed file is not a JSON file.") }
 
-    addData(key : string, value : StorageType) { this.data.set(key, value); return value }
-    getData(key : string) { return this.data.get(key) }
-    removeData(key : string) { const v = this.data.get(key); this.data.delete(key); return v }
-    
-    getDataInt(key : string) {
-        const data = this.data.get(key)
-        
-        if (typeof data !== "number") {
-            return undefined
-        } else {
-            return Number(data)
-        }
-    }
-
-    getDataBool(key : string) {
-        const data = this.data.get(key)
-
-        if (typeof data !== "boolean") {
-            return undefined
-        } else {
-            return data
-        }
-    }
-}
-
-//
-// DataBase holds all of the categories for data, and is also used to save it's contents to files, and load from files as well. Internal structure loosely resembles JSON.
-// Internally, DataBase holds all of it's data using a Map.
-//
-
-class DataBase extends AbstractDataHolder<DataCategory> implements TypeDataBase {
-    // holds all of this Base's categories
-    categories : Map<string, DataCategory> = new Map()
-
-    addData(key : string, value : DataCategory) { this.categories.set(key, value); return value }
-    getData(key : string) { return this.categories.get(key) }
-    removeData(key : string) { const v = this.categories.get(key); this.categories.delete(key); return v }
-
-    // helpers/aliases
-
-    addCategory(value : DataCategory) { return this.addData(value.name, value) }
-    removeCategory(key : string) { return this.removeData(key) }
-    getCategory(key : string) { return this.getData(key) }
-    getCategoryExists(key : string) { return this.getData(key) !== undefined }
-
-
-    async writeToFile(path : string) {
-        await fs.access(path).catch((err) => console.warn(err))
-
-        const fh = index.getFHelper()
-        
-        let s : TypeObject<any> /* save object */ = {}
-
-        this.categories.forEach((cat) => {
-            const sc : TypeObject<any> /* save object (category) */ = {}
-            
-            cat.data.forEach((dat, key) => {
-                sc[key] = dat
+                const buffer = await fs.readFile(filePath)
+                
+                res(JSON.parse(buffer.toString()))
             })
-            
-            s[cat.name] = sc
-        })
 
-        return fh.saveFileJSON(path, s).then(() => {
-            return new Promise((res) => { res() }) as Promise<void>
-        })
-    }
-
-    async loadFromFile(path : string) {
-        await fs.access(path).catch((err) => console.warn(err)) //validate path
-
-        const fh = index.getFHelper()
-        const j = await fh.readFileJSON(path)
-
-        // for debugging purposes //
-        // console.log(j)
-        // console.log(`^ loaded from ${path}`)
-
-        for (const catn in j) {
-            const cat = new DataCategory(catn)
-            this.addCategory(cat)
-
-            for (const valn in j[catn]) {
-                cat.addData(valn, j[catn][valn])
-            }
-        }
-
-        return new Promise((res) => { res() }) as Promise<void>;
+        }).catch((err) => console.error(err))
     }
 }
-
-class DataHelper implements TypeDataHelper {
-    base : TypeDataBase
-
-    constructor(base : TypeDataBase) { this.base = base }
-
-    // Gets category, and creates a new one if it doesn't exist
-    getCategory(key : string) { 
-        let c = this.base.getCategory(key)
-        return c === undefined ? this.base.addCategory(new DataCategory(key)) : c
-    }
-
-    // Gets data in the specified category, and makes a new entry with the fallback value if it doesn't exist
-    // ex getData("doesnt_exist", 1, category) -> category.addData("doesnt_exist", 1) -> return 1
-    getData(key : string, fallback : StorageType, category : TypeDataCategory) {
-        let d = category.getData(key)
-        return d === undefined ? category.addData(key, fallback) : d
-    }
-}
-
-class FileHelper implements TypeFileHelper {
-    async readFileJSON(path : string) {
-        return fs.access(path).then(async () => { //if the path exists
-
-            try {
-                const buff = await fs.readFile(path);
-                const j = JSON.parse(buff.toString());
-                return await (new Promise((res, rej) => {
-                    res(j);
-                }) as Promise<TypeObject<any>>);
-            } catch (err) {
-                throw err;
-            }
-
-        }).catch((err) => { throw err })
-    }
-
-    async saveFileJSON(path : string, data : TypeObject<any>) {
-        return fs.access(path).then(async () => { //if the path exists
-
-            try {
-                await fs.writeFile(path, JSON.stringify(data));
-                return await (new Promise((res) => {
-                    res(true);
-                }) as Promise<boolean>);
-            } catch (err) {
-                throw err;
-            }
-
-        }).catch((err) => { throw err })
-    }
-}
-
-class DirectoryReader {
-    async requireDirectory(folder : string, depth : number, current : number = 0) {
-        try {
-            await fs.access(folder);
-            const arr = await fs.readdir(folder, { withFileTypes: true });
-            let entries: TypeObject<any> = {};
-            for (let x = 0; x < arr.length; x++) {
-                const dt = arr[x];
-                const absPath = path.resolve(folder, dt.name);
-
-                if (dt.isFile() && path.extname(dt.name) === ".js") {
-                    const cmd = require(absPath);
-
-                    delete require.cache[absPath]; //clears cache to allow re-requiring
-
-                    entries[dt.name.split(".")[0]] = cmd; //ex ./commands/file.ts
-                } else if (dt.isDirectory() && current + 1 <= depth) {
-                    await this.requireDirectory(absPath, depth, current + 1).then((val) => { //"recursively" scans directories
-                        entries[dt.name] = val
-                    })
-                }
-            }
-            return await (new Promise((res, rej) => {
-                res(entries);
-            }) as Promise<TypeObject<any>>);
-        } catch (err) {
-            throw err;
-        }
-    }
-}
-
-// expose both classes
-export default { AbstractDataHolder, DataBase, DataCategory, DataHelper, FileHelper, DirectoryReader }
