@@ -3,14 +3,17 @@ import djs from "discord.js"
 import { JSONReader } from "./data"
 import { BasicObject } from "./types"
 
-function onRead(data : BasicObject<any> | string | void) {
+async function onRead(data : BasicObject<any> | string | void) {
     if (typeof data === "string") { throw data }
 
     if (typeof data === "object") {
+        // Note: You must call bot.commandHolder.load() before you can use commands!
         const botObject = new bot.Bot({
             prefix: data[`prefix_${mode}`],
             token: data[`token_${mode}`]
         })
+
+        await botObject.commandHolder.load()
 
         botObject.client.on("ready", () => {
             console.log(`Bot (${botObject.client.user?.username}) is ready.`)
@@ -18,18 +21,29 @@ function onRead(data : BasicObject<any> | string | void) {
             botObject.client.user?.setPresence({
                 activity: {
                     type: "WATCHING",
-                    name: `${botObject.client.guilds.cache.size} guilds | ${botObject.prefix} or @${botObject.client.user.username}`
+                    name: `${botObject.client.guilds.cache.size} guilds | ${botObject.prefix} or @ me | major version 3`
                 }
             })
         })
 
         botObject.client.on("message", (msg : djs.Message) => {
-            console.log(msg.content)
+            if (msg.author.bot) return
 
-            // placeholder stuff to make sure the bot actually like works
+            const splMessage = msg.content.split(" ")
+            // the message starts with the prefix - technically, i could add support for single word prefixes (e.g. foo x or foo y) but im lazy
+            if (msg.content.substr(0, botObject.prefix.length) === botObject.prefix) {
+                const cmdName = splMessage[0].substr(1)
+                const cmd = botObject.commandHolder.commandMap.get(cmdName)
 
-            if (msg.content.toLowerCase() === "james respond") {
-                msg.channel.send("Hello!")
+                if (cmd !== undefined) {
+                    cmd.callback(msg).then((val) => {
+                        let reply = val.message
+
+                        if (val.isReply) { reply = `<@${msg.author.id}>, ${reply}` }
+                        
+                        msg.channel.send(val.message, { embed: val.embed }).catch((reason) => console.error(reason))
+                    })
+                }
             }
         })
 
@@ -47,4 +61,4 @@ if (!mode || (mode !== "production" && mode !== "prod" && mode !== "dev")) {
 
 if (mode === "production") { mode = "prod" } // mode realistically has to be 'prod' or 'dev'
 
-reader.readFromPath("../discord_bot/save/config.json").then((dat) => onRead(dat))
+reader.readFromPath("./save/config.json").then((dat) => onRead(dat))

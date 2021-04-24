@@ -1,10 +1,12 @@
 import djs from "discord.js"
-import { TypeBotOptions } from "./types"
-import { AbstractMapData, JSONReader } from "./data"
+import { BotOptions } from "./types"
+import { MapDataHolder, JSONReader } from "./data"
+import { CommandHolder } from "./cmdHandler"
 
-class Bot extends AbstractMapData<object> {
+class Bot extends MapDataHolder<object> {
     token : string
     prefix : string 
+    commandHolder : CommandHolder
     client : djs.Client
 
     savePath : string | undefined
@@ -12,7 +14,7 @@ class Bot extends AbstractMapData<object> {
     // shardingLimit : number // the upper limit for sharding to begin
     // guildsPerShard : number // the amount guilds per shard - ex. 200 guilds, at 20 guilds/shard would spawn 10 shards
 
-    constructor(botOptions : TypeBotOptions) {
+    constructor(botOptions : BotOptions) {
         super()
         
         this.token = botOptions.token
@@ -21,9 +23,9 @@ class Bot extends AbstractMapData<object> {
             disableMentions: "everyone"
         })
 
-        this.savePath = botOptions.filePath
+        this.commandHolder = new CommandHolder()
 
-        this.client.login(this.token).catch((err) => console.error(err))
+        this.savePath = botOptions.filePath
     }
 
     loadFromPath() {
@@ -39,7 +41,7 @@ class Bot extends AbstractMapData<object> {
     }
 
     login() {
-        this.client.login(this.token)
+        this.client.login(this.token).catch((err) => console.error(err))
     }
 }
 
