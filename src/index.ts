@@ -1,14 +1,16 @@
-import bot from "./bot"
+import { Bot } from "./bot"
 import djs from "discord.js"
 import { JSONReader } from "./data"
 import { BasicObject } from "./types"
+
+let botObject : Bot;
 
 async function onRead(data : BasicObject<any> | string | void) {
     if (typeof data === "string") { throw data }
 
     if (typeof data === "object") {
         // Note: You must call bot.commandHolder.load() before you can use commands!
-        const botObject = new bot.Bot({
+        botObject = new Bot({
             prefix: data[`prefix_${mode}`],
             token: data[`token_${mode}`]
         })
@@ -30,13 +32,21 @@ async function onRead(data : BasicObject<any> | string | void) {
             if (msg.author.bot) return
 
             const splMessage = msg.content.split(" ")
-            // the message starts with the prefix - technically, i could add support for single word prefixes (e.g. foo x or foo y) but im lazy
-            if (msg.content.substr(0, botObject.prefix.length) === botObject.prefix) {
-                const cmdName = splMessage[0].substr(1)
+
+            // i dont understand why pings are either <@X> or <@!X>
+            const mentionsBot = splMessage[0].trim() === `<@${botObject.client.user?.id}>` || splMessage[0].trim() === `<@!${botObject.client.user?.id}>`
+            let startingIndex = 0; // the index the message technically begins at, used for single word prefixes
+
+            // I could do this in a smarter way. I don't want to
+            if (mentionsBot || (splMessage[0] === botObject.prefix && botObject.prefix.substr(botObject.prefix.length - 1) === " ")) { startingIndex = 1 }
+            if (msg.content.substr(0, botObject.prefix.length) === botObject.prefix || mentionsBot) {
+                let cmdName = splMessage[0].substr(1)
+                if (startingIndex > 0) { cmdName = splMessage[startingIndex] }
+                
                 const cmd = botObject.commandHolder.commandMap.get(cmdName)
 
                 if (cmd !== undefined) {
-                    cmd.callback(msg).then((val) => {
+                    cmd.callback(msg, startingIndex).then((val) => {
                         let reply = val.message
 
                         if (val.isReply) { reply = `<@${msg.author.id}>, ${reply}` }
@@ -62,3 +72,9 @@ if (!mode || (mode !== "production" && mode !== "prod" && mode !== "dev")) {
 if (mode === "production") { mode = "prod" } // mode realistically has to be 'prod' or 'dev'
 
 reader.readFromPath("./save/config.json").then((dat) => onRead(dat))
+
+// getters
+
+function getBot() { return botObject }
+
+export default { getBot }

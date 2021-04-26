@@ -3,7 +3,7 @@ import { BotOptions } from "./types"
 import { MapDataHolder, JSONReader } from "./data"
 import { CommandHolder } from "./cmdHandler"
 
-class Bot extends MapDataHolder<object> {
+export class Bot extends MapDataHolder<object> {
     token : string
     prefix : string 
     commandHolder : CommandHolder
@@ -44,5 +44,3 @@ class Bot extends MapDataHolder<object> {
         this.client.login(this.token).catch((err) => console.error(err))
     }
 }
-
-export default { Bot }

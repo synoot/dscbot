@@ -3,7 +3,7 @@ import path from "path"
 import { BasicObject } from "./types";
 
 export class MapDataHolder<T> {
-    protected data : Map<string, T> = new Map()
+    data : Map<string, T> = new Map()
 
     /**
      * Adds data to `this.data`. Returns `value`.

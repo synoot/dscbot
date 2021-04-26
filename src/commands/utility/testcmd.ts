@@ -1,11 +1,10 @@
-import { Command } from "../cmdHandler";
+import { Command } from "../../cmdHandler";
 
 exports.command = new Command({
     name: "echo",
-    description: "Repeats what you sayas uoy tahw staepeR",
-    callback: async (msg) => {
-        const s = msg.content.split(" ")
-        s.shift()
+    description: "Repeats what you say",
+    callback: async (msg, startingIndex) => {
+        const s = msg.content.split(" ").slice(startingIndex + 1)
         const c = s.join(" ").trim()
         return {
             isReply: false,

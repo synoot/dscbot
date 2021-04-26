@@ -1,7 +1,7 @@
 // Holds every interface & abstract class used by the code.
 
 import djs from "discord.js"
-import { Command } from "./cmdHandler"
+import { Command, CommandHolder } from "./cmdHandler"
 
 // Generic/Uncategorized Types //
 
@@ -9,7 +9,7 @@ import { Command } from "./cmdHandler"
 
 // Command Types //
 
-export type CommandCallback = ( msg : djs.Message ) => Promise<CommandResponse>
+export type CommandCallback = ( msg : djs.Message, startingIndex : number ) => Promise<CommandResponse>
 
 export type CommandResponse = {
     isReply : boolean
